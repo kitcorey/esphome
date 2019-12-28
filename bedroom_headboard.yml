@@ -1,5 +1,5 @@
 esphome:
-  name: bedroom_headboard 
+  name: bedroom_headboard
   platform: ESP8266
   board: esp01_1m
 wifi:
@@ -11,48 +11,121 @@ wifi:
     gateway: '192.168.1.1'
     subnet: '255.255.255.0'
     dns1: '192.168.1.33'
-    dns2: '192.168.1.1'
+    dns2: '192.168.1.29'
 time:
   - platform: sntp
     timezone: America/Denver
     servers:
-    - 'ntp.lan'
+    - '192.168.1.10'
     id: sntp_time
 logger:
 api:
 ota:
+sun:
+  latitude: !secret latitude
+  longitude: !secret longitude
 sensor:
   - platform: wifi_signal
     name: "WiFi Signal bedroom_headboard"
     update_interval: 60s
 output:
   - platform: esp8266_pwm
-    pin: 12
-    frequency: 22000 Hz
-    id: pwm_b
+    pin: 15
+    frequency: 1000 Hz
+    id: pwm_r
+    min_power: 0.05
+    max_power: 0.95
   - platform: esp8266_pwm
     pin: 13
-    frequency: 22000 Hz
+    frequency: 1000 Hz
     id: pwm_g
+    min_power: 0.01
+    max_power: 0.95
   - platform: esp8266_pwm
-    pin: 15
-    frequency: 22000 Hz
-    id: pwm_r
+    pin: 12
+    frequency: 1000 Hz
+    id: pwm_b
+    min_power: 0.01
+    max_power: 0.95
   - platform: esp8266_pwm
     pin: 14
-    frequency: 22000 Hz
+    frequency: 1000 Hz
     id: pwm_cw
+    min_power: 0.01
+    max_power: 0.95
   - platform: esp8266_pwm
     pin: 4
-    frequency: 22000 Hz
+    frequency: 1000 Hz
     id: pwm_ww
+    min_power: 0.01
+    max_power: 0.95
 light:
   - platform: rgbww
-    name: "H801 Light"
+    id: light_1
+    name: "Bedroom Headboard"
     red: pwm_r
     green: pwm_g
     blue: pwm_b
-    cold_white: pwm_cw 
+    cold_white: pwm_cw
     warm_white: pwm_ww
     warm_white_color_temperature: 2400 K
     cold_white_color_temperature: 6500 K
+    effects:
+    - automation:
+        name: Sunrise
+        sequence:
+          - light.turn_on:
+              id: light_1 #xy [0.65,0.41]
+              red: 100% #255
+              green: 45% #132
+              blue: 0% #0
+              white: 0%
+              brightness: 10%
+          - delay: 60s
+          - light.turn_on:
+              id: light_1 #xy [0.60,0.40]
+              red: 100% #255
+              green: 51.7% #145
+              blue: 0% #0
+              white: 0%
+              brightness: 33% #85
+              transition_length: 60s
+          - delay: 60s
+          - light.turn_on:
+              id: light_1 #xy [0.48,0.40]
+              red: 100% #255
+              green: 51.7% #190
+              blue: 0% #109
+              white: 0%
+              brightness: 66% #170
+              transition_length: 60s
+          - delay: 60s
+          - light.turn_on:
+              id: light_1 #xy [0.48,0.40]
+              red: 100% #255
+              green: 51.7% #190
+              blue: 0% #109
+              white: 1%
+              color_temperature: 2400 K
+              brightness: 66% #170
+              transition_length: 60s
+          - delay: 60s
+          - light.turn_on:
+              id: light_1 #xy [0.48,0.40]
+              red: 100% #255
+              green: 51.7% #190
+              blue: 0% #109
+              white: 100%
+              color_temperature: 2400 K
+              brightness: 66% #170
+              transition_length: 60s
+          - delay: 60s
+          - light.turn_on:
+              id: light_1
+              white: 100%
+              color_temperature: 2400 K
+              brightness: 0%
+              transition_length: 60s
+          - delay: 1800s
+          - light.turn_off:
+              id: light_1
