@@ -1,0 +1,39 @@
+esphome:
+  name: plantbridge
+  platform: ESP32
+  board: nodemcu-32s
+wifi:
+  ssid: 'bill wi the science fi'
+  password: 'kit+april=awesome'
+  domain: '.lan'
+  manual_ip:
+    static_ip: '192.168.1.98'
+    gateway: '192.168.1.1'
+    subnet: '255.255.255.0'
+    dns1: '192.168.1.33'
+    dns2: '192.168.1.29'
+time:
+  - platform: homeassistant
+    id: homeassistant_time
+esp32_ble_tracker:
+logger:
+api:
+ota:
+sensor:
+  - platform: wifi_signal
+    name: "WiFi Signal plant_bridge"
+    update_interval: 60s
+  - platform: xiaomi_hhccjcy01
+    mac_address: 'C4:7C:8D:63:F1:5D'
+    temperature:
+      name: "Xiaomi HHCCJCY01 Temperature"
+      filters:
+        - offset: 1.38
+    moisture:
+      name: "Xiaomi HHCCJCY01 Moisture"
+    illuminance:
+      name: "Xiaomi HHCCJCY01 Illuminance"
+    conductivity:
+      name: "Xiaomi HHCCJCY01 Soil Conductivity"
+    battery_level:
+      name: "Xiaomi HHCCJCY01 Battery Level"
