@@ -1,5 +1,5 @@
 esphome:
-  name: bedroom_headboard
+  name: headboard
   platform: ESP8266
   board: esp01_1m
 wifi:
@@ -13,11 +13,8 @@ wifi:
     dns1: '192.168.1.33'
     dns2: '192.168.1.29'
 time:
-  - platform: sntp
-    timezone: America/Denver
-    servers:
-    - '192.168.1.10'
-    id: sntp_time
+  - platform: homeassistant
+    id: homeassistant_time
 logger:
 api:
 ota:
