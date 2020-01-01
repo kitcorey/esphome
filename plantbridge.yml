@@ -26,14 +26,28 @@ sensor:
   - platform: xiaomi_hhccjcy01
     mac_address: 'C4:7C:8D:63:F1:5D'
     temperature:
-      name: "Xiaomi HHCCJCY01 Temperature"
+      name: "Bedroom Plant Temperature"
       filters:
         - offset: 1.38
     moisture:
-      name: "Xiaomi HHCCJCY01 Moisture"
+      name: "Bedroom Plant Moisture"
     illuminance:
-      name: "Xiaomi HHCCJCY01 Illuminance"
+      name: "Bedroom Plant Illuminance"
     conductivity:
-      name: "Xiaomi HHCCJCY01 Soil Conductivity"
+      name: "Bedroom Plant Soil Conductivity"
     battery_level:
-      name: "Xiaomi HHCCJCY01 Battery Level"
+      name: "Bedroom Plant Battery Level"
+  - platform: xiaomi_hhccjcy01
+    mac_address: 'C4:7C:8D:63:EF:C8'
+    temperature:
+      name: "Kitchen Plant Temperature"
+      filters:
+        - offset: 1.61
+    moisture:
+      name: "Kitchen Plant Moisture"
+    illuminance:
+      name: "Kitchen Plant Illuminance"
+    conductivity:
+      name: "Kitchen Plant Soil Conductivity"
+    battery_level:
+      name: "Kitchen Plant Battery Level"
