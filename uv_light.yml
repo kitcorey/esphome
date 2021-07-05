@@ -1,18 +1,24 @@
 esphome:
-  name: tree
+  name: uv_light
   platform: ESP8266
   board: esp01_1m
+  includes:
+    - espsense.h
+  libraries:
+    - "ESPAsyncUDP"   # do not include if using an ESP32 board or device!
+    - "ArduinoJson-esphomelib@5.13.3"
 
 wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
   domain: !secret wifi_domain
+  use_address: '192.168.1.97'
   manual_ip:
     static_ip: '192.168.1.97'
     gateway: '192.168.1.1'
     subnet: '255.255.255.0'
-    dns1: '192.168.1.33'
-    dns2: '192.168.1.29'
+    dns1: '192.168.1.70'
+    dns2: '192.168.1.80'
 
 # Enable logging
 logger:
@@ -44,13 +50,13 @@ binary_sensor:
     on_press:
       - switch.toggle: fakebutton
   - platform: template
-    name: "Tree Running"
+    name: "uv light Running"
     filters:
       - delayed_off: 15s
     lambda: |-
-      if (isnan(id(power).state)) {
+      if (isnan(id(power_sensor).state)) {
         return {};
-      } else if (id(power).state > 4) {
+      } else if (id(power_sensor).state > 4) {
         // Running
         return true;
       } else {
@@ -60,7 +66,7 @@ binary_sensor:
 
 switch:
   - platform: template
-    name: "Tree POW Relay"
+    name: "uv light POW Relay"
     optimistic: true
     id: fakebutton
     turn_on_action:
@@ -82,25 +88,27 @@ output:
 
 light:
   - platform: monochromatic
-    name: "Tree Blue LED"
+    name: "uv light Blue LED"
     output: pow_blue_led
     id: led
 
 sensor:
   - platform: wifi_signal
-    name: "Tree WiFi Signal"
+    name: "uv light WiFi Signal"
     update_interval: 60s
   - platform: uptime
-    name: "Tree Uptime"
+    name: "uv light Uptime"
   - platform: cse7766
     update_interval: 2s
     current:
-      name: "Tree Current"
+      name: "uv light Current"
     voltage:
-      name: "Tree Voltage"
+      id: voltage_sensor
+      unit_of_measurement: V
+      name: "uv light Voltage"
     power:
-      name: "Tree POW Power"
-      id: power
+      name: "uv light POW Power"
+      id: power_sensor
       on_value_range:
         - above: 3.0
           then:
@@ -108,7 +116,21 @@ sensor:
         - below: 2.0
           then:
             - light.turn_off: led
+      unit_of_measurement: W
+
+custom_component:
+  # Create ESPSense instance, passing the ID of the sensor it should retrieve
+  # power data from
+- lambda: |-
+    // Define "plugs"
+    ESPSensePlug plug1 = ESPSensePlug(id(power_sensor), "50:C7:BF:51:5F:DE", "UV Light", 120.0);
+    // Plug1 also measures voltage
+    plug1.voltage_sid = voltage_sensor; // ID of voltage sensor
+    // Add to ESPSense
+    auto sense = new ESPSense();
+    sense->addPlug(plug1);
+    return {sense};
 
 text_sensor:
   - platform: version
-    name: "Tree ESPHome Version"
+    name: "uv light ESPHome Version"
