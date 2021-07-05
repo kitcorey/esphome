@@ -1,17 +1,17 @@
 esphome:
-  name: headboard
+  name: bedroom_headboard
   platform: ESP8266
   board: esp01_1m
 wifi:
-  ssid: 'bill wi the science fi'
-  password: 'kit+april=awesome'
-  domain: '.lan'
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  domain: !secret wifi_domain
   manual_ip:
     static_ip: '192.168.1.99'
     gateway: '192.168.1.1'
     subnet: '255.255.255.0'
-    dns1: '192.168.1.33'
-    dns2: '192.168.1.29'
+    dns1: '192.168.1.70'
+    dns2: '192.168.1.80'
 time:
   - platform: homeassistant
     id: homeassistant_time
@@ -30,31 +30,31 @@ output:
     pin: 15
     frequency: 1000 Hz
     id: pwm_r
-    min_power: 0.05
+    min_power: 0
     max_power: 0.95
   - platform: esp8266_pwm
     pin: 13
     frequency: 1000 Hz
     id: pwm_g
-    min_power: 0.01
+    min_power: 0
     max_power: 0.95
   - platform: esp8266_pwm
     pin: 12
     frequency: 1000 Hz
     id: pwm_b
-    min_power: 0.01
+    min_power: 0
     max_power: 0.95
   - platform: esp8266_pwm
     pin: 14
     frequency: 1000 Hz
     id: pwm_cw
-    min_power: 0.01
+    min_power: 0
     max_power: 0.95
   - platform: esp8266_pwm
     pin: 4
     frequency: 1000 Hz
     id: pwm_ww
-    min_power: 0.01
+    min_power: 0
     max_power: 0.95
 light:
   - platform: rgbww
