@@ -15,10 +15,10 @@ wifi:
      hidden: true
   fast_connect: true
   domain: !secret wifi_domain
-  use_address: '192.168.1.97'
+  use_address: '192.168.20.97'
   manual_ip:
-    static_ip: '192.168.1.97'
-    gateway: '192.168.1.1'
+    static_ip: '192.168.20.97'
+    gateway: '192.168.20.1'
     subnet: '255.255.255.0'
     dns1: '192.168.1.70'
     dns2: '192.168.1.80'
