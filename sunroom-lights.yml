@@ -2,7 +2,7 @@ substitutions:
   reboot_timeout: 1d
 
 esphome:
-  name: sunroom_lights
+  name: sunroom-lights
   platform: ESP8266
   board: esp01_1m
   includes:

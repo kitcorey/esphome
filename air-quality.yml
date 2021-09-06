@@ -1,5 +1,5 @@
 esphome:
-  name: air_quality
+  name: air-quality
   platform: ESP32
   board: nodemcu-32s
   includes:

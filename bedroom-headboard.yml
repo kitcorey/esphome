@@ -1,5 +1,5 @@
 esphome:
-  name: bedroom_headboard
+  name: bedroom-headboard
   platform: ESP8266
   board: esp01_1m
 wifi:
