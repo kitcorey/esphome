@@ -1,8 +1,8 @@
 substitutions:
   reboot_timeout: 1d
-  static_ip: '192.168.1.92'
   node_name: 'air-purifier'
-  name: 'air purifier'
+  name: 'Air Purifier'
+  static_ip: '192.168.20.92'
 
 esphome:
   name: ${node_name}
@@ -18,7 +18,7 @@ wifi:
   domain: !secret wifi_domain
   fast_connect: true
   manual_ip:
-    static_ip: '192.168.20.92'
+    static_ip: ${static_ip}
     gateway: '192.168.20.1'
     subnet: '255.255.255.0'
     dns1: '192.168.1.70'
@@ -28,7 +28,7 @@ wifi:
      password: !secret wifi_password
      hidden: true
   reboot_timeout: ${reboot_timeout}
-  use_address: 192.168.20.92
+  use_address: ${static_ip}
 
 # Enable logging
 logger:
@@ -66,17 +66,15 @@ binary_sensor:
     lambda: |-
       if (isnan(id(power_sensor).state)) {
         return {};
-      } else if (id(power_sensor).state > 4) {
-        // Running
+      } else if (id(power_sensor).state > 3.0) {
         return true;
       } else {
-        // Not running
         return false;
       }
 
 switch:
   - platform: template
-    name: "${name} POW Relay"
+    name: "${name} Switch"
     optimistic: true
     id: fakebutton
     turn_on_action:
@@ -126,6 +124,12 @@ sensor:
           then:
             - light.turn_off: led
       unit_of_measurement: W
+  - platform: total_daily_energy
+    name: "${name} Total Daily Energy"
+    power_id: power_sensor
+    min_save_interval: 1h
+    device_class: energy
+    state_class: measurement
 
 custom_component:
   # Create ESPSense instance, passing the ID of the sensor it should retrieve

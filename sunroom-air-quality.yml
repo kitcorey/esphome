@@ -1,20 +1,28 @@
+substitutions:
+  reboot_timeout: 1d
+  node_name: 'sunroom-air-quality'
+  name: 'Sunroom Air Quality'
+  static_ip: '192.168.20.94'
+
 esphome:
-  name: air-quality
-  platform: ESP32
   board: nodemcu-32s
   includes:
     - aqi_custom_sensor.h
   libraries:
     - "Adafruit PM25 AQI Sensor"
     - SPI
+  name: ${node_name}
+  platform: ESP32
+
 i2c:
   sda: 23
   scl: 22
+
 wifi:
   domain: !secret wifi_domain
   fast_connect: true
   manual_ip:
-    static_ip: '192.168.20.94'
+    static_ip: ${static_ip}
     gateway: '192.168.20.1'
     subnet: '255.255.255.0'
     dns1: '192.168.1.70'
@@ -23,19 +31,26 @@ wifi:
    - ssid: !secret wifi_ssid
      password: !secret wifi_password
      hidden: true
-  use_address: '192.168.20.94'
+  reboot_timeout: ${reboot_timeout}
+  use_address: ${static_ip}
+
 time:
   - platform: homeassistant
     id: homeassistant_time
+
 esp32_ble_tracker:
+
 logger:
   level: DEBUG
+
 api:
-  reboot_timeout: 0s
+  reboot_timeout: ${reboot_timeout}
+
 ota:
+
 sensor:
   - platform: wifi_signal
-    name: "WiFi Signal plant_bridge"
+    name: "${name} WiFi Signal"
     update_interval: 60s
   - platform: xiaomi_hhccjcy01
     mac_address: 'C4:7C:8D:63:F1:5D'
@@ -76,37 +91,35 @@ sensor:
   #  update_interval: 5s
   - platform: scd30
     co2:
-      name: "Living Room CO2"
+      name: "${name} CO2"
       accuracy_decimals: 1
     temperature:
-      name: "Living Room Temperature"
+      name: "${name} Temperature"
       accuracy_decimals: 2
     humidity:
-      name: "Living Room Humidity"
+      name: "${name} Humidity"
       accuracy_decimals: 1
     address: 0x61
     update_interval: 5s
-  
   - platform: custom
     lambda: |-
       auto aqi_sensor = new PMSA003I();
       App.register_component(aqi_sensor);
       return {aqi_sensor->pm10, aqi_sensor->pm25, aqi_sensor->pm100};
-
     sensors:
-    - name: "Particulate Matter <1.0µm Concentration"
+    - name: "{name} Particulate Matter <1.0µm Concentration"
       unit_of_measurement: "µg/m^3"
       filters:
       - sliding_window_moving_average:
           window_size: 5
           send_every: 5
-    - name: "Particulate Matter <2.5µm Concentration"
+    - name: "${name} Particulate Matter <2.5µm Concentration"
       unit_of_measurement: "µg/m^3"
       filters:
       - sliding_window_moving_average:
           window_size: 5
           send_every: 5
-    - name: "Particulate Matter <10.0µm Concentration"
+    - name: "{name} Particulate Matter <10.0µm Concentration"
       unit_of_measurement: "µg/m^3"
       filters:
       - sliding_window_moving_average:
