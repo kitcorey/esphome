@@ -102,7 +102,6 @@ sensor:
   - platform: uptime
     name: "uv light Uptime"
   - platform: cse7766
-    update_interval: 2s
     current:
       name: "uv light Current"
     voltage:

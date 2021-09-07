@@ -102,7 +102,6 @@ sensor:
   - platform: uptime
     name: "Living Room Floor Lamp Uptime"
   - platform: cse7766
-    update_interval: 2s
     current:
       name: "Living Room Floor Lamp Current"
     voltage:

@@ -106,7 +106,6 @@ sensor:
   - platform: uptime
     name: "sunroom lights Uptime"
   - platform: cse7766
-    update_interval: 2s
     current:
       name: "sunroom lights Current"
     voltage:
