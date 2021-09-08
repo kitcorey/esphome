@@ -1,0 +1,3 @@
+sun:
+  latitude: !secret latitude
+  longitude: !secret longitude

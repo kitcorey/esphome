@@ -1,0 +1,12 @@
+external_components:
+  - source: github://kitcorey/ESPSense@mac
+    components: [espsense]
+
+espsense:
+  plugs:
+    - name: "${name}"
+      #current_sensor: current_sensor
+      mac_address: 50:C7:BF:9B:BD:37
+      power_sensor: power_sensor
+      voltage_sensor: voltage_sensor
+      voltage: 120.0

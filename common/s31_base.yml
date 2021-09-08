@@ -1,0 +1,20 @@
+esphome:
+  board: esp01_1m
+  name: ${node_name}
+  platform: ESP8266
+
+# Enable logging
+logger:
+  baud_rate: 0
+
+api:
+
+ota:
+
+time:
+  - platform: homeassistant
+    id: homeassistant_time
+
+text_sensor:
+  - platform: version
+    name: "${name} ESPHome Version"
