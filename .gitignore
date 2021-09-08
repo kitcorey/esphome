@@ -7,7 +7,5 @@
 **/lib/
 **/src/
 **/platformio.ini
+**/partitions.csv
 /secrets.yaml
-/air_quality/
-/fastled/
-/plantbridge/
