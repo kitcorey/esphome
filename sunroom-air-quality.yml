@@ -98,7 +98,7 @@ sensor:
       App.register_component(aqi_sensor);
       return {aqi_sensor->pm10, aqi_sensor->pm25, aqi_sensor->pm100};
     sensors:
-    - name: "{name} Particulate Matter <1.0µm Concentration"
+    - name: "${name} Particulate Matter <1.0µm Concentration"
       unit_of_measurement: "µg/m^3"
       filters:
       - sliding_window_moving_average:
@@ -110,7 +110,7 @@ sensor:
       - sliding_window_moving_average:
           window_size: 5
           send_every: 5
-    - name: "{name} Particulate Matter <10.0µm Concentration"
+    - name: "${name} Particulate Matter <10.0µm Concentration"
       unit_of_measurement: "µg/m^3"
       filters:
       - sliding_window_moving_average:
