@@ -8,7 +8,7 @@ packages:
   wifi: !include common/wifi.yml
 
 esphome:
-  board: nodemcu-32s
+  board: esp32thing_plus
   name: ${node_name}
   platform: ESP32
 
@@ -100,3 +100,4 @@ sensor:
       - median:
           window_size: 3
           send_every: 3
+    update_interval: 60s
