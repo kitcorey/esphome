@@ -76,12 +76,15 @@ sensor:
         - below: 2.0
           then:
             - light.turn_off: led
-      unit_of_measurement: W
+      filters:
+        # Multiplication factor from W to kW is 0.001
+        - multiply: 0.001
+      unit_of_measurement: kW
     update_interval: 5s
   - platform: total_daily_energy
     name: "${name} Total Daily Energy"
     power_id: power_sensor
     min_save_interval: 1h
     device_class: energy
-    state_class: measurement
+    state_class: total_increasing
 
