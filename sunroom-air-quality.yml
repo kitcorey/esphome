@@ -28,6 +28,9 @@ logger:
 api:
   reboot_timeout: ${reboot_timeout}
 
+esp32_ble_tracker:
+bluetooth_proxy:
+  active: true
 
 sensor:
   - platform: wifi_signal
