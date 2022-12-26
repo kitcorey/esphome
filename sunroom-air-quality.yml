@@ -7,10 +7,13 @@ substitutions:
 packages:
   wifi: !include common/wifi.yml
 
-esphome:
+esp32:
   board: esp32thing_plus
+  framework:
+    type: esp-idf
+
+esphome:
   name: ${node_name}
-  platform: ESP32
 
 ota:
 
