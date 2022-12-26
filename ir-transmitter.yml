@@ -32,3 +32,16 @@ remote_receiver:
 #   Blink quickly = Error encountered
 status_led:
     pin: GPIO4
+
+switch:
+  - platform: template
+    name: "Fairy Lights"
+    turn_off_action:
+      remote_transmitter.transmit_nec:
+        address: 0x7F80
+        command: 0xE51A
+    turn_on_action:
+      remote_transmitter.transmit_nec:
+        address: 0x7F80
+        command: 0xED12
+    optimistic: true
