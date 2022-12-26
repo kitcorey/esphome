@@ -81,7 +81,8 @@ sensor:
   - platform: total_daily_energy
     name: "${name} Total Daily Energy"
     power_id: power_sensor
-    min_save_interval: 1h
     device_class: energy
     state_class: total_increasing
 
+preferences:
+  flash_write_interval: 1h
