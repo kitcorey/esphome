@@ -1,3 +1,6 @@
+substitutions:
+    update_interval: 30s
+
 uart:
   rx_pin: RX
   baud_rate: 4800
@@ -60,12 +63,15 @@ sensor:
     name: "${name} Uptime"
   - platform: cse7766
     current:
-      id: current_sensor
       name: "${name} Current"
+      id: current_sensor
+      filters:
+        - throttle_average: ${update_interval}
     voltage:
-      id: voltage_sensor
-      unit_of_measurement: V
       name: "${name} Voltage"
+      id: voltage_sensor
+      filters:
+        - throttle_average: ${update_interval}
     power:
       name: "${name} Power"
       id: power_sensor
@@ -77,7 +83,23 @@ sensor:
           then:
             - light.turn_off: led
       unit_of_measurement: W
-    update_interval: 5s
+      filters:
+        - throttle_average: ${update_interval}
+    energy:
+      name: "${name} Energy"
+      id: energy_sensor
+      filters:
+        - throttle: ${update_interval}
+    apparent_power:
+      name: "${name} Apparent Power"
+      id: apparent_power_sensor
+      filters:
+        - throttle_average: ${update_interval}
+    power_factor:
+      name: "${name} Power Factor"
+      id: power_factor_sensor
+      filters:
+        - throttle_average: ${update_interval}
   - platform: total_daily_energy
     name: "${name} Total Daily Energy"
     power_id: power_sensor
