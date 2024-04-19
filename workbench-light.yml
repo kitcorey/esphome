@@ -1,0 +1,15 @@
+substitutions:
+  reboot_timeout: 1d
+  node_name: 'workbench-light'
+  name: 'Workbench Light'
+  static_ip: '192.168.20.92'
+  espsense_mac_address: '50:C7:BF:9B:BD:37'
+  # Not currently used:
+  # espsense_device_id: F27E13CF9241F651445747EF8EFE3FDC7C05FDF6
+
+packages:
+  s31_base: !include common/s31_base.yml
+  wifi: !include common/wifi.yml
+  sun: !include common/sun.yml
+  s31_power: !include common/s31_power.yml
+  #espsense: !include common/espsense.yml
