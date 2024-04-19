@@ -33,6 +33,116 @@ remote_receiver:
 status_led:
     pin: GPIO4
 
+button:
+  - platform: template
+    name: "Fairy Lights Plus"
+    on_press:
+      - remote_transmitter.transmit_nec:
+          address: 0x7F80
+          command: 0xE11E
+  - platform: template
+    name: "Fairy Lights Minus"
+    on_press:
+      - remote_transmitter.transmit_nec:
+          address: 0x7F80
+          command: 0xFC03
+  - platform: template
+    name: "Fairy Lights 4H"
+    on_press:
+      - remote_transmitter.transmit_nec:
+          address: 0x7F80
+          command: 0xFE01
+  - platform: template
+    name: "Fairy Lights 8H"
+    on_press:
+      - remote_transmitter.transmit_nec:
+          address: 0x7F80
+          command: 0xFD02
+  - platform: template
+    name: "Fairy Lights Red"
+    on_press:
+      - remote_transmitter.transmit_nec:
+          address: 0x7F80
+          command: 0xFB04
+  - platform: template
+    name: "Fairy Lights Green"
+    on_press:
+      - remote_transmitter.transmit_nec:
+          address: 0x7F80 
+          command: 0xFA05
+  - platform: template
+    name: "Fairy Lights Blue"
+    on_press:
+      - remote_transmitter.transmit_nec:
+          address: 0x7F80
+          command: 0xF906
+  - platform: template
+    name: "Fairy Lights Orange"
+    on_press:
+      - remote_transmitter.transmit_nec:
+          address: 0x7F80
+          command: 0xF807
+  - platform: template
+    name: "Fairy Lights Pale Green"
+    on_press:
+      - remote_transmitter.transmit_nec:
+          address: 0x7F80
+          command: 0xF708
+  - platform: template
+    name: "Fairy Lights Purple"
+    on_press:
+      - remote_transmitter.transmit_nec:
+          address: 0x7F80
+          command: 0xF609
+  - platform: template
+    name: "Fairy Lights Yellow"
+    on_press:
+      - remote_transmitter.transmit_nec:
+          address: 0x7F80
+          command: 0xF50A
+  - platform: template
+    name: "Fairy Lights Pale Blue"
+    on_press:
+      - remote_transmitter.transmit_nec:
+          address: 0x7F80
+          command: 0xE41B
+  - platform: template
+    name: "Fairy Lights Mauve"
+    on_press:
+      - remote_transmitter.transmit_nec:
+          address: 0x7F80
+          command: 0xE01F
+  - platform: template
+    name: "Fairy Lights Pale Yellow"
+    on_press:
+      - remote_transmitter.transmit_nec:
+          address: 0x7F80
+          command: 0xF30C 
+  - platform: template
+    name: "Fairy Lights Blue Green"
+    on_press:
+      - remote_transmitter.transmit_nec:
+          address: 0x7F80
+          command: 0xF20D
+  - platform: template
+    name: "Fairy Lights Grape"
+    on_press:
+      - remote_transmitter.transmit_nec:
+          address: 0x7F80
+          command: 0xF10E
+  - platform: template
+    name: "Fairy Lights Mode"
+    on_press:
+      - remote_transmitter.transmit_nec:
+          address: 0x7F80
+          command: 0xED12
+  - platform: template
+    name: "LG Power"
+    on_press:
+      - remote_transmitter.transmit_lg:
+          data: 0x20DF10EF
+          nbits: 32
+
 switch:
   - platform: template
     name: "Fairy Lights"
