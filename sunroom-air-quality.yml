@@ -6,6 +6,7 @@ substitutions:
 
 packages:
   wifi: !include common/wifi.yml
+  sensor_wifi: !include common/sensor_wifi.yml
 
 esp32:
   board: esp32thing_plus

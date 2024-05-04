@@ -7,6 +7,7 @@ substitutions:
 packages:
   s31_base: !include common/s31_base.yml
   wifi: !include common/wifi.yml
+  sensor_wifi: !include common/sensor_wifi.yml
   sun: !include common/sun.yml
 
 # GPIO	Component	Description

@@ -13,7 +13,3 @@ wifi:
      hidden: true
   reboot_timeout: ${reboot_timeout}
   use_address: ${static_ip}
-sensor:
-  - platform: wifi_signal
-    name: "${friendly_name} WiFi Signal"
-    update_interval: 60s
