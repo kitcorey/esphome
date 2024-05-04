@@ -1,7 +1,7 @@
 substitutions:
   reboot_timeout: 1d
-  node_name: 'sunroom-air-quality'
-  name: 'Sunroom Air Quality'
+  name: 'sunroom-air-quality'
+  friendly_name: 'Sunroom Air Quality'
   static_ip: '192.168.20.94'
 
 packages:
@@ -13,7 +13,7 @@ esp32:
     type: esp-idf
 
 esphome:
-  name: ${node_name}
+  name: ${name}
 
 ota:
 
@@ -41,73 +41,70 @@ bluetooth_proxy:
   active: true
 
 sensor:
-  - platform: wifi_signal
-    name: "${name} WiFi Signal"
-    update_interval: 60s
   - platform: scd30
     co2:
-      name: "${name} CO2"
+      name: "${friendly_name} CO2"
       accuracy_decimals: 1
     temperature:
-      name: "${name} Temperature"
+      name: "${friendly_name} Temperature"
       accuracy_decimals: 2
     humidity:
-      name: "${name} Humidity"
+      name: "${friendly_name} Humidity"
       accuracy_decimals: 1
     address: 0x61
     update_interval: 60s
     altitude_compensation: 1617m
   - platform: pmsa003i
     pm_1_0:
-      name: "${name} PM1.0"
+      name: "${friendly_name} PM1.0"
       filters:
       - median:
           window_size: 3
           send_every: 3
     pm_2_5:
-      name: "${name} PM2.5"
+      name: "${friendly_name} PM2.5"
       filters:
       - median:
           window_size: 3
           send_every: 3
     pm_10_0:
-      name: "${name} PM10.0"
+      name: "${friendly_name} PM10.0"
       filters:
       - median:
           window_size: 3
           send_every: 3
     pmc_0_3:
-      name: "${name} Particulate Matter <0.3µm Concentration"
+      name: "${friendly_name} Particulate Matter <0.3µm Concentration"
       filters:
       - median:
           window_size: 3
           send_every: 3
     pmc_0_5:
-      name: "${name} Particulate Matter <0.5µm Concentration"
+      name: "${friendly_name} Particulate Matter <0.5µm Concentration"
       filters:
       - median:
           window_size: 3
           send_every: 3
     pmc_1_0:
-      name: "${name} Particulate Matter <1.0µm Concentration"
+      name: "${friendly_name} Particulate Matter <1.0µm Concentration"
       filters:
       - median:
           window_size: 3
           send_every: 3
     pmc_2_5:
-      name: "${name} Particulate Matter <2.5µm Concentration"
+      name: "${friendly_name} Particulate Matter <2.5µm Concentration"
       filters:
       - median:
           window_size: 3
           send_every: 3
     pmc_5_0:
-      name: "${name} Particulate Matter <5.0µm Concentration"
+      name: "${friendly_name} Particulate Matter <5.0µm Concentration"
       filters:
       - median:
           window_size: 3
           send_every: 3
     pmc_10_0:
-      name: "${name} Particulate Matter <10.0µm Concentration"
+      name: "${friendly_name} Particulate Matter <10.0µm Concentration"
       filters:
       - median:
           window_size: 3

@@ -1,7 +1,7 @@
 substitutions:
   reboot_timeout: 1d
-  node_name: 'living-room-floor-lamp'
-  name: 'Living Room Floor Lamp'
+  name: 'living-room-floor-lamp'
+  friendly_name: 'Living Room Floor Lamp'
   static_ip: '192.168.20.96'
   espsense_mac_address: 50:C7:BF:FC:D1:99
   # Not currently used:

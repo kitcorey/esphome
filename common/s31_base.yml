@@ -1,6 +1,6 @@
 esphome:
   board: esp01_1m
-  name: ${node_name}
+  name: "${name}"
   platform: ESP8266
 
 # Enable logging
@@ -17,4 +17,4 @@ time:
 
 text_sensor:
   - platform: version
-    name: "${name} ESPHome Version"
+    name: "${friendly_name} ESPHome Version"

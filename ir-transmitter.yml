@@ -1,7 +1,7 @@
 substitutions:
   reboot_timeout: 1d
-  node_name: 'ir-transmitter'
-  name: 'IR Transmitter'
+  name: 'ir-transmitter'
+  friendly_name: 'IR Transmitter'
   static_ip: '192.168.20.93'
 
 packages:

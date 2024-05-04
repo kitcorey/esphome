@@ -15,7 +15,7 @@ binary_sensor:
     on_press:
       - switch.toggle: fakebutton
   - platform: template
-    name: "${name} Running"
+    name: "${friendly_name} Running"
     filters:
       - delayed_off: 15s
     lambda: |-
@@ -29,7 +29,7 @@ binary_sensor:
 
 switch:
   - platform: template
-    name: "${name} Switch"
+    name: "${friendly_name} Switch"
     optimistic: true
     id: fakebutton
     turn_on_action:
@@ -51,29 +51,26 @@ output:
 
 light:
   - platform: monochromatic
-    name: "${name} Blue LED"
+    name: "${friendly_name} Blue LED"
     output: pow_blue_led
     id: led
 
 sensor:
-  - platform: wifi_signal
-    name: "${name} WiFi Signal"
-    update_interval: 60s
   - platform: uptime
-    name: "${name} Uptime"
+    name: "${friendly_name} Uptime"
   - platform: cse7766
     current:
-      name: "${name} Current"
+      name: "${friendly_name} Current"
       id: current_sensor
       filters:
         - throttle_average: ${update_interval}
     voltage:
-      name: "${name} Voltage"
+      name: "${friendly_name} Voltage"
       id: voltage_sensor
       filters:
         - throttle_average: ${update_interval}
     power:
-      name: "${name} Power"
+      name: "${friendly_name} Power"
       id: power_sensor
       on_value_range:
         - above: 3.0
@@ -86,22 +83,22 @@ sensor:
       filters:
         - throttle_average: ${update_interval}
     energy:
-      name: "${name} Energy"
+      name: "${friendly_name} Energy"
       id: energy_sensor
       filters:
         - throttle: ${update_interval}
     apparent_power:
-      name: "${name} Apparent Power"
+      name: "${friendly_name} Apparent Power"
       id: apparent_power_sensor
       filters:
         - throttle_average: ${update_interval}
     power_factor:
-      name: "${name} Power Factor"
+      name: "${friendly_name} Power Factor"
       id: power_factor_sensor
       filters:
         - throttle_average: ${update_interval}
   - platform: total_daily_energy
-    name: "${name} Total Daily Energy"
+    name: "${friendly_name} Total Daily Energy"
     power_id: power_sensor
     device_class: energy
     state_class: total_increasing

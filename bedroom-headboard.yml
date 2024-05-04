@@ -1,14 +1,14 @@
 substitutions:
   reboot_timeout: 1d
-  node_name: 'bedroom-headboard'
-  name: 'Bedroom Headboard'
+  name: 'bedroom-headboard'
+  friendly_name: 'Bedroom Headboard'
   static_ip: '192.168.20.99'
 
 packages:
   wifi: !include common/wifi.yml
 
 esphome:
-  name: bedroom-headboard
+  name: "${name}"
   platform: ESP8266
   board: esp01_1m
 
@@ -25,11 +25,6 @@ ota:
 sun:
   latitude: !secret latitude
   longitude: !secret longitude
-
-sensor:
-  - platform: wifi_signal
-    name: "WiFi Signal bedroom_headboard"
-    update_interval: 60s
 
 output:
   - platform: esp8266_pwm
@@ -66,7 +61,7 @@ output:
 light:
   - platform: rgbww
     id: light_1
-    name: "Bedroom Headboard"
+    name: "${friendly_name}"
     red: pwm_r
     green: pwm_g
     blue: pwm_b

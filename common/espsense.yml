@@ -4,7 +4,7 @@ external_components:
 
 espsense:
   plugs:
-    - name: "${name}"
+    - name: "${friendly_name}"
       #current_sensor: current_sensor
       mac_address: "${espsense_mac_address}"
       power_sensor: power_sensor
