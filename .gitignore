@@ -9,4 +9,6 @@
 **/src/
 **/platformio.ini
 **/partitions.csv
+.cache/*
+.build/*
 /secrets.yaml
