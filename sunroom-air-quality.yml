@@ -17,6 +17,8 @@ esphome:
   name: ${name}
 
 ota:
+  - platform: esphome
+    password: !secret ota_password
 
 i2c:
   sda: 23
