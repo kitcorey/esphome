@@ -1,0 +1,62 @@
+substitutions:
+  reboot_timeout: 1d
+  name: 'heatpump'
+  friendly_name: 'Mitsu Heat Pump'
+  static_ip: '192.168.20.98'
+
+packages:
+  wifi: !include common/wifi.yml
+  sensor_wifi: !include common/sensor_wifi.yml
+
+esphome:
+  name: ${name}
+
+esp32:
+  board: esp32dev
+
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+ota:
+  password: !secret ota_password
+
+time:
+  - platform: homeassistant
+    id: homeassistant_time
+
+text_sensor:
+  - platform: version
+    name: ${name} ESPHome Version
+
+sensor:
+  - platform: uptime
+    name: ${name} Uptime
+
+# This is a minimal example of what's required to get things up and
+# running.  See the wiki here:
+# https://github.com/Sammy1Am/mitsubishi-uart/wiki/Getting-Started
+# for more detailed configuration options
+
+external_components:
+  - source:
+      type: git
+      url: https://github.com/Sammy1Am/mitsubishi-uart
+      ref: release # Use "main" to get the latest changes
+
+# Mitsubishi UART Component
+mitsubishi_uart:
+  heatpump_uart: hp_uart
+
+# Define UART connected to heat pump
+uart:
+  - id: hp_uart
+    baud_rate: 2400 # Default for many Mitsubishi systems
+    parity: EVEN # Default for many Mitsubishi systems
+    rx_pin:
+      number: GPIO25
+    tx_pin:
+      number: GPIO26
+
+logger:
+  level: DEBUG
