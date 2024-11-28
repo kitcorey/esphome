@@ -1,0 +1,105 @@
+substitutions:
+  reboot_timeout: 1d
+  name: 'ble-tracker'
+  friendly_name: 'BLE Tracker'
+  static_ip: '192.168.20.94'
+
+# Revisions 7 and above of the board use the Realtek RTL8201
+# https://wesp32.com/files/wESP32-Product-Brief.pdf
+ethernet:
+  type: RTL8201
+  mdc_pin: GPIO16
+  mdio_pin: GPIO17
+  clk_mode: GPIO0_IN
+  phy_addr: 0
+  phy_registers:
+#https://github.com/esphome/esphome/pull/6704
+#https://github.com/esphome/issues/issues/5798
+#  /*
+#   * RTL8201 RMII Mode Setting Register (RMSR)
+#   * Page 7 Register 16
+#   *
+#   * bit 0      Reserved            0
+#   * bit 1      Rg_rmii_rxdsel      1 (default)
+#   * bit 2      Rg_rmii_rxdv_sel:   0 (default)
+#   * bit 3      RMII Mode:          1 (RMII Mode)
+#   * bit 4~7    Rg_rmii_rx_offset:  1111 (default)
+#   * bit 8~11   Rg_rmii_tx_offset:  1111 (default)
+#   * bit 12     Rg_rmii_clkdir:     1 (Input)
+#   * bit 13~15  Reserved            000
+#   *
+#   * Binary: 0001 1111 1111 1010
+#   * Hex: 0x1FFA
+#   *
+#   */
+    - address: 0x10
+      value: 0x1FFA
+      page_id: 0x07
+#  /*
+#   * RTL8201 Interrupt, WOL Enable, and LEDs Register
+#   * Page 7 Register 19
+#   *
+#   * bit 0      En10mlpi:           0 (default)
+#   * bit 1-2    Reserved            00
+#   * bit 3      Customized_LED:     0 (default)
+#   * bit 4-5    LED_sel:            00 (ACT_all/LINK_100)
+#   * bit 6-9    Reserved            0
+#   * bit 10     Rg_led0_wol_sel:    0 (default)
+#   * bit 11     Int_anerr:          0 (default)
+#   * bit 12     Int_dupchg:         0 (default)
+#   * bit 13     Int_linkchg:        0 (default)
+#   * bit 14-15  Reserved            00
+#   *
+#   * Binary: 0000 0000 0000 0000
+#   * Hex: 0x0000
+#   *
+#   */
+    - address: 0x13
+      value: 0x0000
+      page_id: 0x07
+  manual_ip:
+    static_ip: ${static_ip}
+    gateway: '192.168.20.1'
+    subnet: '255.255.255.0'
+
+ota:
+  platform: esphome
+  password: !secret ota_password
+
+esp32:
+  board: wesp32
+  framework:
+    type: esp-idf
+
+esphome:
+  name: ${name}
+
+time:
+  - platform: homeassistant
+    id: homeassistant_time
+
+logger:
+
+api:
+  encryption:
+    key: !secret api_encryption_key
+  reboot_timeout: ${reboot_timeout}
+
+esp32_ble_tracker:
+  scan_parameters:
+    interval: 1100ms
+    window: 1100ms
+
+bluetooth_proxy:
+  active: true
+
+sensor:
+  - platform: xiaomi_lywsd02mmc
+    mac_address: !secret lywsd02mmc_mac_address
+    bindkey: !secret lywsd02mmc_bindkey
+    temperature:
+      name: "LYWSD02MMC Temperature"
+    humidity:
+      name: "LYWSD02MMC Humidity"
+    battery_level:
+      name: "LYWSD02MMC Battery Level"
