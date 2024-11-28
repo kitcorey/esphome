@@ -1,0 +1,42 @@
+substitutions:
+  reboot_timeout: 1d
+  name: 'crawlspace-humidifier'
+  friendly_name: 'Crawlspace Humidifier'
+  static_ip: '192.168.20.91'
+
+packages:
+  wifi: !include common/wifi.yml
+  sensor_wifi: !include common/sensor_wifi.yml
+
+esp32:
+  board: adafruit_feather_esp32_v2
+  framework:
+    type: esp-idf
+
+esphome:
+  name: ${name}
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+time:
+  - platform: homeassistant
+    id: homeassistant_time
+
+logger:
+
+api:
+  encryption:
+    key: !secret api_encryption_key
+  reboot_timeout: ${reboot_timeout}
+
+bluetooth_proxy:
+  active: true
+
+switch:
+  - platform: gpio
+    id: relay
+    pin: GPIO27
+    name: "${friendly_name} Switch"
+    restore_mode: ALWAYS_OFF
