@@ -2,4 +2,4 @@ esphome
 platformio
 # 10.2.0 specifically is required for esphome
 # https://github.com/esphome/issues/issues/5525
-pillow==10.2.0
+pillow
