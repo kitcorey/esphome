@@ -32,6 +32,8 @@ logger:
   level: DEBUG 
 
 api:
+  encryption:
+    key: !secret api_encryption_key
   reboot_timeout: ${reboot_timeout}
 
 esp32_ble_tracker:
