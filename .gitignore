@@ -12,3 +12,7 @@
 .cache/*
 .build/*
 /secrets.yaml
+
+# These symlinked from another repo
+airgradient-one.yaml
+airgradient-open-air-o-1pst.yaml
