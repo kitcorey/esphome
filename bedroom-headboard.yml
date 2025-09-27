@@ -4,23 +4,31 @@ substitutions:
   friendly_name: 'Bedroom Headboard'
   static_ip: '192.168.20.99'
 
+esp32:
+  board: esp32-c3-devkitm-1
+  framework:
+    type: esp-idf
+
 packages:
   wifi: !include common/wifi.yml
   sensor_wifi: !include common/sensor_wifi.yml
 
 esphome:
   name: "${name}"
-
-esp8266:
-  board: esp01_1m
+  platformio_options:
+    board_build.flash_mode: dio
 
 time:
   - platform: homeassistant
     id: homeassistant_time
 
 logger:
+  level: DEBUG
+  baud_rate: 0
 
 api:
+  encryption:
+    key: !secret api_encryption_key
 
 ota:
   - platform: esphome
@@ -31,36 +39,26 @@ sun:
   longitude: !secret longitude
 
 output:
-  - platform: esp8266_pwm
-    pin: 15
-    frequency: 1000 Hz
+  - platform: ledc
+    pin: GPIO3
+    frequency: 19531Hz
     id: pwm_r
-    min_power: 0
-    max_power: 0.95
-  - platform: esp8266_pwm
-    pin: 13
-    frequency: 1000 Hz
+  - platform: ledc
+    pin: GPIO0
+    frequency: 19531Hz
     id: pwm_g
-    min_power: 0
-    max_power: 0.95
-  - platform: esp8266_pwm
-    pin: 12
-    frequency: 1000 Hz
+  - platform: ledc
+    pin: GPIO1
+    frequency: 19531Hz
     id: pwm_b
-    min_power: 0
-    max_power: 0.95
-  - platform: esp8266_pwm
-    pin: 14
-    frequency: 1000 Hz
-    id: pwm_cw
-    min_power: 0
-    max_power: 0.95
-  - platform: esp8266_pwm
-    pin: 4
-    frequency: 1000 Hz
+  - platform: ledc
+    pin: GPIO4
+    frequency: 19531Hz
     id: pwm_ww
-    min_power: 0
-    max_power: 0.95
+  - platform: ledc
+    pin: GPIO5
+    frequency: 19531Hz
+    id: pwm_cw
 
 light:
   - platform: rgbww
@@ -132,3 +130,17 @@ light:
           - delay: 1800s
           - light.turn_off:
               id: light_1
+
+sensor:
+  - platform: uptime
+    name: "${name} Uptime Sensor"
+
+  - platform: internal_temperature
+    name: "${name} Internal Temperature"
+    accuracy_decimals: 2
+    update_interval: 30s
+
+switch:
+  - platform: restart
+    name: ${name}-restart
+    id: restart_switch
