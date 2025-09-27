@@ -7,5 +7,6 @@ requires-python = ">=3.13"
 dependencies = [
     "esphome>=2025.9.1",
     "pillow>=10.4.0",
+    "pip>=25.2",
     "platformio>=6.1.18",
 ]

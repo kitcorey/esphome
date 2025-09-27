@@ -3,3 +3,4 @@ platformio
 # 10.2.0 specifically is required for esphome
 # https://github.com/esphome/issues/issues/5525
 pillow
+pip
