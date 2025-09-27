@@ -103,3 +103,12 @@ sensor:
       name: "LYWSD02MMC Humidity"
     battery_level:
       name: "LYWSD02MMC Battery Level"
+  - platform: xiaomi_lywsd03mmc
+    mac_address: !secret lywsd03mmc_mac_address
+    bindkey: !secret lywsd03mmc_bindkey
+    temperature:
+      name: "LYWSD03MMC Temperature"
+    humidity:
+      name: "LYWSD03MMC Humidity"
+    battery_level:
+      name: "LYWSD03MMC Battery Level"
