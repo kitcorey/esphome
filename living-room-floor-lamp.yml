@@ -1,9 +1,16 @@
+# 4C:11:AE:00:59:E9
 substitutions:
   reboot_timeout: 1d
   name: 'living-room-floor-lamp'
   friendly_name: 'Living Room Floor Lamp'
   static_ip: '192.168.20.96'
   espsense_mac_address: 50:C7:BF:FC:D1:99
+  # Per https://devices.esphome.io/devices/Sonoff-S31 this should be esp12e
+  # Need to check each board to verify flash size
+  # https://www.reddit.com/r/Esphome/comments/1azrp34/sonoff_s31_failed_ota_update_after_20242/
+  # 4MB - esp12e
+  # 1MB - esp01_1m
+  board: esp12e
   # Not currently used:
   #espsense_device_id: FBEA4BC05451D81E7466C84BE4D976ACA3D82290
 
