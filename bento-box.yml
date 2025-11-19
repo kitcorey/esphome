@@ -1,0 +1,22 @@
+# 84:CC:A8:9E:C9:AB
+substitutions:
+  reboot_timeout: 1d
+  name: 'bento-box'
+  friendly_name: 'Bento Box'
+  static_ip: '192.168.20.93'
+  espsense_mac_address: '50:C7:BF:A3:E8:72'
+  # Per https://devices.esphome.io/devices/Sonoff-S31 this should be esp12e
+  # Need to check each board to verify flash size
+  # https://www.reddit.com/r/Esphome/comments/1azrp34/sonoff_s31_failed_ota_update_after_20242/
+  # 4MB - esp12e
+  # 1MB - esp01_1m
+  board: esp12e
+  # Not currently used:
+  # espsense_device_id: F27E13CF9241F651445747EF8EFE3FDC7C05FDF6
+
+packages:
+  s31_base: !include common/s31_base.yml
+  wifi: !include common/wifi.yml
+  sensor_wifi: !include common/sensor_wifi.yml
+  sun: !include common/sun.yml
+  s31_power: !include common/s31_power.yml
