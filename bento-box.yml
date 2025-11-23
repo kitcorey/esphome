@@ -3,7 +3,7 @@ substitutions:
   reboot_timeout: 1d
   name: 'bento-box'
   friendly_name: 'Bento Box'
-  static_ip: '192.168.20.93'
+  static_ip: '192.168.20.84'
   espsense_mac_address: '50:C7:BF:A3:E8:72'
   # Per https://devices.esphome.io/devices/Sonoff-S31 this should be esp12e
   # Need to check each board to verify flash size
