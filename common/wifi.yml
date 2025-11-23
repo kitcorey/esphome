@@ -13,3 +13,4 @@ wifi:
      hidden: true
   reboot_timeout: ${reboot_timeout}
   use_address: ${static_ip}
+  min_auth_mode: WPA2
