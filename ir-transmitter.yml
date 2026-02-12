@@ -3,6 +3,7 @@ substitutions:
   name: 'ir-transmitter'
   friendly_name: 'IR Transmitter'
   static_ip: '192.168.20.93'
+  board: esp_wroom_02
 
 packages:
   s31_base: !include common/s31_base.yml
