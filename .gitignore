@@ -11,6 +11,7 @@
 .cache/*
 .build/*
 /secrets.yaml
+.claude/
 
 # These symlinked from another repo
 airgradient-one.yaml
