@@ -1,8 +1,8 @@
 substitutions:
   reboot_timeout: 1d
-  name: 'heatpump-huzzah32'
-  friendly_name: 'Mitsu Heat Pump'
-  static_ip: '192.168.20.100'
+  name: 'heatpump'
+  friendly_name: 'Heat Pump'
+  static_ip: '192.168.20.83'
 
 packages:
   wifi: !include common/wifi.yml
