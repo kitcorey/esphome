@@ -14,6 +14,8 @@ esphome:
 
 esp32:
   board: featheresp32
+  framework:
+    type: esp-idf
 
 api:
   encryption:
@@ -35,77 +37,41 @@ time:
 #   CN105 Pin 1 (+12V)  -> NOT CONNECTED
 
 external_components:
-  - source: github://muart-group/esphome-components@2026.3
-    components: [mitsubishi_itp]
+  - source: github://echavet/MitsubishiCN105ESPHome
 
-# CN105: 2400 baud, 8E1 (even parity). Try 9600 if 2400 doesn't work.
+# CN105: 2400 baud, 8E1 (even parity, handled by cn105 component internally)
 uart:
-  - id: hp_uart
-    baud_rate: 2400
-    parity: EVEN
-    rx_pin:
-      number: GPIO16  # Feather silkscreen "RX"
-    tx_pin:
-      number: GPIO17  # Feather silkscreen "TX"
+  id: HP_UART
+  baud_rate: 2400
+  rx_pin:
+    number: GPIO16  # Feather silkscreen "RX"
+  tx_pin:
+    number: GPIO17  # Feather silkscreen "TX"
 
 climate:
-  - platform: mitsubishi_itp
+  - platform: cn105
     id: mitsubishi_hp
     name: "Climate"
-    uart_heatpump: hp_uart
-    update_interval: 5s
-    supported_modes:
-      - "OFF"
-      - HEAT
-      - DRY
-      - COOL
-      - FAN_ONLY
-      - HEAT_COOL
-    supported_fan_modes:
-      - AUTO
-      - QUIET
-      - LOW
-      - MEDIUM
-      - HIGH
+    update_interval: 2s
+    supports:
+      mode: ["OFF", HEAT, DRY, COOL, FAN_ONLY, AUTO]
+      fan_mode: [AUTO, QUIET, LOW, MEDIUM, HIGH]
+    compressor_frequency_sensor:
+      name: "Compressor Frequency"
+    outside_air_temperature_sensor:
+      name: "Outdoor Temperature"
+    vertical_vane_select:
+      name: "Vertical Vane"
+    horizontal_vane_select:
+      name: "Horizontal Vane"
 
 sensor:
   - platform: uptime
     name: ${name} Uptime
-  - platform: mitsubishi_itp
-    outdoor_temperature:
-      name: "Outdoor Temperature"
-    compressor_frequency:
-      name: "Compressor Frequency"
-
-binary_sensor:
-  - platform: mitsubishi_itp
-    defrost:
-      name: "Defrost"
-    filter_status:
-      name: "Filter Status"
-    preheat:
-      name: "Preheat"
-    standby:
-      name: "Standby"
 
 text_sensor:
   - platform: version
     name: ${name} ESPHome Version
-  - platform: mitsubishi_itp
-    actual_fan:
-      name: "Actual Fan"
-    error_code:
-      name: "Error Code"
-
-select:
-  - platform: mitsubishi_itp
-    temperature_source:
-      name: "Temperature Source"
-
-button:
-  - platform: mitsubishi_itp
-    filter_reset_button:
-      name: "Filter Reset"
 
 logger:
   level: DEBUG
