@@ -63,3 +63,6 @@ sensor:
   - platform: ble_rssi
     mac_address: !secret lywsd03mmc_mac_address
     name: "Olimex LYWSD03MMC RSSI"
+  - platform: ble_rssi
+    mac_address: !secret ekg_plus_mac_address
+    name: "Olimex EKG+ RSSI"
