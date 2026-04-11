@@ -111,3 +111,9 @@ sensor:
       name: "LYWSD03MMC Humidity"
     battery_level:
       name: "LYWSD03MMC Battery Level"
+  - platform: ble_rssi
+    mac_address: !secret lywsd02mmc_mac_address
+    name: "LYWSD02MMC RSSI"
+  - platform: ble_rssi
+    mac_address: !secret lywsd03mmc_mac_address
+    name: "LYWSD03MMC RSSI"
