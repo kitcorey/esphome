@@ -41,18 +41,19 @@ def get_rssi_entities(url, headers):
     resp = requests.get(f"{url}/api/states", headers=headers, timeout=10)
     resp.raise_for_status()
     entities = {}
+    # Check longer (more specific) prefixes first so ble_tracker_olimex wins
+    # over ble_tracker for entities like sensor.ble_tracker_olimex_*.
+    ordered = sorted(BOARDS.items(), key=lambda kv: len(kv[0]), reverse=True)
     for state in resp.json():
         eid = state["entity_id"]
         if "rssi" not in eid or not eid.startswith("sensor."):
             continue
-        # Match entities belonging to our BLE tracker devices
-        for board_prefix, board_label in BOARDS.items():
+        for board_prefix, board_label in ordered:
             if eid.startswith(f"sensor.{board_prefix}_"):
-                # Extract the BLE device name (e.g., "lywsd02mmc" or "lywsd03mmc")
                 suffix = eid[len(f"sensor.{board_prefix}_"):]
-                # Strip "olimex_" prefix if present (Olimex sensor names are prefixed)
-                device = suffix.replace("olimex_", "").replace("_rssi", "").upper()
+                device = suffix.replace("_rssi", "").upper()
                 entities.setdefault(device, {})[board_label] = eid
+                break
     return entities
 
 
