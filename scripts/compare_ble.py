@@ -4,12 +4,14 @@ Queries Home Assistant's REST API for RSSI sensor history and prints a
 side-by-side comparison table.
 
 Usage:
-    uv run python compare_ble.py             # Last 24 hours
-    uv run python compare_ble.py --hours 1   # Last hour
+    uv run python scripts/compare_ble.py             # Last 24 hours
+    uv run python scripts/compare_ble.py --hours 1   # Last hour
 """
 
 import argparse
+import json
 import statistics
+import subprocess
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -33,8 +35,53 @@ RSSI_MIN = -100
 RSSI_MAX = 0
 
 
+def get_ble_devices() -> dict | None:
+    """Get BLE device list from list_ble_devices.py."""
+    script_dir = Path(__file__).parent
+    result = subprocess.run(
+        ["uv", "run", "python", "list_ble_devices.py", "--format", "json"],
+        capture_output=True,
+        text=True,
+        cwd=script_dir,
+    )
+    if result.returncode != 0:
+        return None
+    return json.loads(result.stdout)
+
+
+def validate_coverage(entities: dict, ble_devices: dict | None) -> None:
+    """Report which BLE devices are missing RSSI sensors."""
+    if not ble_devices:
+        return
+
+    tracked_devices = set(entities.keys())
+
+    print("\nRSSI Coverage:")
+    print("-" * 60)
+
+    native_devices = ble_devices.get("native_ble_devices", [])
+    missing = []
+    for device in native_devices:
+        # Normalize name to match entity discovery format
+        name = device["name"]
+        if name.endswith(" BLE"):
+            name = name[:-4]
+        slug = name.upper().replace(" ", "_")
+
+        if slug not in tracked_devices:
+            missing.append((device["name"], device["mac"]))
+
+    if missing:
+        print(f"Missing RSSI sensors for {len(missing)} device(s):")
+        for name, mac in missing:
+            print(f"  - {name} ({mac})")
+        print("\nRun add_rssi_sensors.py to add them to your ESPHome configs.")
+    else:
+        print(f"All {len(native_devices)} native BLE devices have RSSI sensors")
+
+
 def load_secrets():
-    secrets_path = Path(__file__).parent / "secrets.yaml"
+    secrets_path = Path(__file__).parent.parent / "secrets.yaml"
     with open(secrets_path) as f:
         secrets = yaml.safe_load(f)
     url = secrets.get("ha_url")
@@ -149,6 +196,10 @@ def main():
 
     print(f"Found RSSI entities for: {', '.join(sorted(entities))}")
     print_comparison(entities, url, headers, args.hours)
+
+    # Check coverage against full BLE device list
+    ble_devices = get_ble_devices()
+    validate_coverage(entities, ble_devices)
 
 
 if __name__ == "__main__":

@@ -66,3 +66,43 @@ sensor:
   - platform: ble_rssi
     mac_address: !secret ekg_plus_mac_address
     name: "Olimex EKG+ RSSI"
+
+  - platform: ble_rssi
+    mac_address: "E2:A3:D2:13:68:7E"
+    name: "Olimex Bedroom Shade 1 RSSI"
+  - platform: ble_rssi
+    mac_address: "C6:59:FC:37:F5:37"
+    name: "Olimex Bedroom Shade 2 RSSI"
+  - platform: ble_rssi
+    mac_address: "A4:C1:38:9F:96:A9"
+    name: "Olimex Cooler Thermometer RSSI"
+  - platform: ble_rssi
+    mac_address: "A4:C1:38:10:2A:E5"
+    name: "Olimex Filament Storage 1 RSSI"
+  - platform: ble_rssi
+    mac_address: "A4:C1:38:40:2B:D4"
+    name: "Olimex Filament Storage 2 RSSI"
+  - platform: ble_rssi
+    mac_address: "A4:C1:38:60:44:8B"
+    name: "Olimex Filament Storage 3 RSSI"
+  - platform: ble_rssi
+    mac_address: "A4:C1:38:FF:2F:4A"
+    name: "Olimex Freezer Thermometer RSSI"
+  - platform: ble_rssi
+    mac_address: "A4:C1:38:0A:8C:67"
+    name: "Olimex Fridge Thermometer RSSI"
+  - platform: ble_rssi
+    mac_address: "C2:44:38:CB:5D:A2"
+    name: "Olimex Sunroom Shade 1 RSSI"
+  - platform: ble_rssi
+    mac_address: "E4:F4:9A:A1:8B:F8"
+    name: "Olimex Sunroom Shade 2 RSSI"
+  - platform: ble_rssi
+    mac_address: "C6:02:A9:65:BE:64"
+    name: "Olimex Sunroom Shade 3 RSSI"
+  - platform: ble_rssi
+    mac_address: "CF:96:14:D5:10:05"
+    name: "Olimex Sunroom Shade 4 RSSI"
+  - platform: ble_rssi
+    mac_address: "CA:A4:30:0F:52:FC"
+    name: "Olimex Sunroom Shade 5 RSSI"
