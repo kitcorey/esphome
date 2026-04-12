@@ -171,6 +171,10 @@ def print_compact(entities, all_data, hours):
     print("-" * 88)
 
     no_data_devices = []
+    wins = {short_labels[0]: 0, short_labels[1]: 0, "tie": 0}
+    total_diff = 0.0
+    diff_count = 0
+
     for device in sorted(entities):
         data = all_data[device]
         values_a = data.get(board_labels[0], ([], 0))[0]
@@ -189,14 +193,19 @@ def print_compact(entities, all_data, hours):
 
         if mean_a and mean_b:
             diff = mean_b - mean_a  # Positive = second board stronger
+            total_diff += diff
+            diff_count += 1
             if abs(diff) < 1.0:
                 winner = "~tie"
+                wins["tie"] += 1
                 diff_str = f"{diff:+.1f}"
             elif diff > 0:
                 winner = short_labels[1]
+                wins[short_labels[1]] += 1
                 diff_str = f"{diff:+.1f}"
             else:
                 winner = short_labels[0]
+                wins[short_labels[0]] += 1
                 diff_str = f"{diff:+.1f}"
         elif mean_a:
             winner = f"{short_labels[0]} only"
@@ -210,10 +219,23 @@ def print_compact(entities, all_data, hours):
             name = name[:19] + ".."
         print(f"{name:<22} {col_a:>8} {col_b:>8} {diff_str:>6} {readings:>10}  {winner}")
 
+    # Summary
+    print("-" * 88)
+    avg_diff = total_diff / diff_count if diff_count else 0
+    if avg_diff > 1.0:
+        overall = f"{short_labels[1]} by {avg_diff:+.1f} dB avg"
+    elif avg_diff < -1.0:
+        overall = f"{short_labels[0]} by {avg_diff:+.1f} dB avg"
+    else:
+        overall = "essentially tied"
+    print(f"Summary: {short_labels[0]} wins {wins[short_labels[0]]}, "
+          f"{short_labels[1]} wins {wins[short_labels[1]]}, "
+          f"ties {wins['tie']} -> {overall}")
+
     if no_data_devices:
         names = ', '.join(format_device_name(d) for d in no_data_devices[:3])
         suffix = ", ..." if len(no_data_devices) > 3 else ""
-        print(f"\n({len(no_data_devices)} device(s) with no data: {names}{suffix})")
+        print(f"({len(no_data_devices)} device(s) with no data: {names}{suffix})")
 
 
 def print_verbose(entities, all_data, hours):
