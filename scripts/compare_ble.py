@@ -106,7 +106,7 @@ def get_rssi_entities(url, headers):
         eid = state["entity_id"]
         if "rssi" not in eid or not eid.startswith("sensor."):
             continue
-        for entity_prefix, sensor_prefix, board_label in ordered:
+        for entity_prefix, sensor_prefix, board_label, _ in ordered:
             full = f"sensor.{entity_prefix}_{sensor_prefix}"
             if eid.startswith(full):
                 device = eid[len(full):].replace("_rssi", "").upper()
