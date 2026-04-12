@@ -4,8 +4,9 @@ Queries Home Assistant's REST API for RSSI sensor history and prints a
 side-by-side comparison table.
 
 Usage:
-    uv run python scripts/compare_ble.py             # Last 24 hours
+    uv run python scripts/compare_ble.py             # Last 24 hours, compact view
     uv run python scripts/compare_ble.py --hours 1   # Last hour
+    uv run python scripts/compare_ble.py --verbose   # Detailed per-device stats
 """
 
 import argparse
@@ -19,14 +20,14 @@ from pathlib import Path
 import requests
 import yaml
 
-# (entity_prefix, sensor_name_prefix, column_label)
+# (entity_prefix, sensor_name_prefix, column_label, short_label)
 # sensor_name_prefix is what ESPHome prepends to the sensor object_id, which
 # lives inside the entity_id *after* the device-name prefix. For wESP32
 # sensors are bare (e.g. "LYWSD03MMC RSSI"); Olimex sensors are named
 # "Olimex LYWSD03MMC RSSI" so the slug carries an extra "olimex_".
 BOARDS = [
-    ("ble_tracker", "", "wESP32 (chip)"),
-    ("ble_tracker_olimex", "olimex_", "Olimex (external)"),
+    ("ble_tracker", "", "wESP32 (chip)", "wESP32"),
+    ("ble_tracker_olimex", "olimex_", "Olimex (external)", "Olimex"),
 ]
 
 # ESP32 BLE radio sensitivity floor is around -97 to -100 dBm; readings
@@ -138,11 +139,89 @@ def get_history(url, headers, entity_id, hours):
     return values, dropped
 
 
-def print_comparison(entities, url, headers, hours):
+def fetch_all_history(entities, url, headers, hours):
+    """Fetch history for all entities and return as dict."""
+    board_labels = [b[2] for b in BOARDS]
+    all_data = {}
+    for device in entities:
+        all_data[device] = {}
+        for label in board_labels:
+            eid = entities[device].get(label)
+            if eid:
+                all_data[device][label] = get_history(url, headers, eid, hours)
+            else:
+                all_data[device][label] = ([], 0)
+    return all_data
+
+
+def format_device_name(slug: str) -> str:
+    """Convert SCREAMING_SNAKE to Title Case."""
+    return slug.replace("_", " ").title()
+
+
+def print_compact(entities, all_data, hours):
+    """Print a compact one-line-per-device summary."""
+    board_labels = [b[2] for b in BOARDS]
+    short_labels = [b[3] for b in BOARDS]
+
+    print(f"\nBLE RSSI Comparison (last {hours}h)")
+    print("=" * 88)
+    print(f"{'Device':<22} {short_labels[0]:>8} {short_labels[1]:>8} "
+          f"{'Diff':>6} {'Readings':>10}  Winner")
+    print("-" * 88)
+
+    no_data_devices = []
+    for device in sorted(entities):
+        data = all_data[device]
+        values_a = data.get(board_labels[0], ([], 0))[0]
+        values_b = data.get(board_labels[1], ([], 0))[0]
+
+        if not values_a and not values_b:
+            no_data_devices.append(device)
+            continue
+
+        mean_a = statistics.mean(values_a) if values_a else None
+        mean_b = statistics.mean(values_b) if values_b else None
+
+        col_a = f"{mean_a:.1f}" if mean_a else "--"
+        col_b = f"{mean_b:.1f}" if mean_b else "--"
+        readings = f"{len(values_a)}/{len(values_b)}"
+
+        if mean_a and mean_b:
+            diff = mean_b - mean_a  # Positive = second board stronger
+            if abs(diff) < 1.0:
+                winner = "~tie"
+                diff_str = f"{diff:+.1f}"
+            elif diff > 0:
+                winner = short_labels[1]
+                diff_str = f"{diff:+.1f}"
+            else:
+                winner = short_labels[0]
+                diff_str = f"{diff:+.1f}"
+        elif mean_a:
+            winner = f"{short_labels[0]} only"
+            diff_str = "--"
+        else:
+            winner = f"{short_labels[1]} only"
+            diff_str = "--"
+
+        name = format_device_name(device)
+        if len(name) > 21:
+            name = name[:19] + ".."
+        print(f"{name:<22} {col_a:>8} {col_b:>8} {diff_str:>6} {readings:>10}  {winner}")
+
+    if no_data_devices:
+        names = ', '.join(format_device_name(d) for d in no_data_devices[:3])
+        suffix = ", ..." if len(no_data_devices) > 3 else ""
+        print(f"\n({len(no_data_devices)} device(s) with no data: {names}{suffix})")
+
+
+def print_verbose(entities, all_data, hours):
+    """Print detailed per-device statistics."""
     board_labels = [b[2] for b in BOARDS]
     col_width = 22
 
-    print(f"\nBLE RSSI Comparison (last {hours}h)")
+    print(f"\nBLE RSSI Comparison - Detailed (last {hours}h)")
     print("=" * (28 + col_width * len(board_labels)))
     header = " " * 28
     for label in board_labels:
@@ -151,14 +230,8 @@ def print_comparison(entities, url, headers, hours):
     print("-" * (28 + col_width * len(board_labels)))
 
     for device in sorted(entities):
-        print(f"\n{device}")
-        board_data = {}
-        for label in board_labels:
-            eid = entities[device].get(label)
-            if eid:
-                board_data[label] = get_history(url, headers, eid, hours)
-            else:
-                board_data[label] = ([], 0)
+        print(f"\n{format_device_name(device)}")
+        board_data = all_data[device]
 
         rows = [
             ("Mean RSSI (dBm)", lambda v, d: f"{statistics.mean(v):.1f}"),
@@ -183,6 +256,7 @@ def print_comparison(entities, url, headers, hours):
 def main():
     parser = argparse.ArgumentParser(description="Compare BLE RSSI between tracker boards")
     parser.add_argument("--hours", type=float, default=24, help="Hours of history to analyze (default: 24)")
+    parser.add_argument("--verbose", "-v", action="store_true", help="Show detailed per-device statistics")
     args = parser.parse_args()
 
     url, token = load_secrets()
@@ -194,8 +268,13 @@ def main():
         print("Expected entities like: sensor.ble_tracker_lywsd02mmc_rssi")
         sys.exit(1)
 
-    print(f"Found RSSI entities for: {', '.join(sorted(entities))}")
-    print_comparison(entities, url, headers, args.hours)
+    print(f"Found {len(entities)} devices with RSSI sensors")
+    all_data = fetch_all_history(entities, url, headers, args.hours)
+
+    if args.verbose:
+        print_verbose(entities, all_data, args.hours)
+    else:
+        print_compact(entities, all_data, args.hours)
 
     # Check coverage against full BLE device list
     ble_devices = get_ble_devices()
