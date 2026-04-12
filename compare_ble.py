@@ -17,10 +17,15 @@ from pathlib import Path
 import requests
 import yaml
 
-BOARDS = {
-    "ble_tracker": "wESP32 (chip)",
-    "ble_tracker_olimex": "Olimex (external)",
-}
+# (entity_prefix, sensor_name_prefix, column_label)
+# sensor_name_prefix is what ESPHome prepends to the sensor object_id, which
+# lives inside the entity_id *after* the device-name prefix. For wESP32
+# sensors are bare (e.g. "LYWSD03MMC RSSI"); Olimex sensors are named
+# "Olimex LYWSD03MMC RSSI" so the slug carries an extra "olimex_".
+BOARDS = [
+    ("ble_tracker", "", "wESP32 (chip)"),
+    ("ble_tracker_olimex", "olimex_", "Olimex (external)"),
+]
 
 
 def load_secrets():
@@ -41,17 +46,17 @@ def get_rssi_entities(url, headers):
     resp = requests.get(f"{url}/api/states", headers=headers, timeout=10)
     resp.raise_for_status()
     entities = {}
-    # Check longer (more specific) prefixes first so ble_tracker_olimex wins
-    # over ble_tracker for entities like sensor.ble_tracker_olimex_*.
-    ordered = sorted(BOARDS.items(), key=lambda kv: len(kv[0]), reverse=True)
+    # Check longer (more specific) entity prefixes first so ble_tracker_olimex
+    # wins over ble_tracker for sensor.ble_tracker_olimex_* entities.
+    ordered = sorted(BOARDS, key=lambda b: len(b[0]), reverse=True)
     for state in resp.json():
         eid = state["entity_id"]
         if "rssi" not in eid or not eid.startswith("sensor."):
             continue
-        for board_prefix, board_label in ordered:
-            if eid.startswith(f"sensor.{board_prefix}_"):
-                suffix = eid[len(f"sensor.{board_prefix}_"):]
-                device = suffix.replace("_rssi", "").upper()
+        for entity_prefix, sensor_prefix, board_label in ordered:
+            full = f"sensor.{entity_prefix}_{sensor_prefix}"
+            if eid.startswith(full):
+                device = eid[len(full):].replace("_rssi", "").upper()
                 entities.setdefault(device, {})[board_label] = eid
                 break
     return entities
@@ -78,7 +83,7 @@ def get_history(url, headers, entity_id, hours):
 
 
 def print_comparison(entities, url, headers, hours):
-    board_labels = list(BOARDS.values())
+    board_labels = [b[2] for b in BOARDS]
     col_width = 22
 
     print(f"\nBLE RSSI Comparison (last {hours}h)")
