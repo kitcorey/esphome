@@ -27,6 +27,11 @@ BOARDS = [
     ("ble_tracker_olimex", "olimex_", "Olimex (external)"),
 ]
 
+# ESP32 BLE radio sensitivity floor is around -97 to -100 dBm; readings
+# below this are decode artifacts, not real signal. RSSI is always negative.
+RSSI_MIN = -100
+RSSI_MAX = 0
+
 
 def load_secrets():
     secrets_path = Path(__file__).parent / "secrets.yaml"
@@ -72,14 +77,18 @@ def get_history(url, headers, entity_id, hours):
     resp.raise_for_status()
     data = resp.json()
     if not data or not data[0]:
-        return []
-    values = []
+        return [], 0
+    values, dropped = [], 0
     for entry in data[0]:
         try:
-            values.append(float(entry["state"]))
+            v = float(entry["state"])
         except (ValueError, KeyError):
             continue
-    return values
+        if RSSI_MIN <= v <= RSSI_MAX:
+            values.append(v)
+        else:
+            dropped += 1
+    return values, dropped
 
 
 def print_comparison(entities, url, headers, hours):
@@ -100,25 +109,25 @@ def print_comparison(entities, url, headers, hours):
         for label in board_labels:
             eid = entities[device].get(label)
             if eid:
-                values = get_history(url, headers, eid, hours)
-                board_data[label] = values
+                board_data[label] = get_history(url, headers, eid, hours)
             else:
-                board_data[label] = []
+                board_data[label] = ([], 0)
 
         rows = [
-            ("Mean RSSI (dBm)", lambda v: f"{statistics.mean(v):.1f}"),
-            ("Min / Max", lambda v: f"{min(v):.0f} / {max(v):.0f}"),
-            ("Std Dev", lambda v: f"{statistics.stdev(v):.1f}" if len(v) > 1 else "n/a"),
-            ("Readings/hour", lambda v: f"{len(v) / hours:.1f}"),
-            ("Total readings", lambda v: f"{len(v)}"),
+            ("Mean RSSI (dBm)", lambda v, d: f"{statistics.mean(v):.1f}"),
+            ("Min / Max", lambda v, d: f"{min(v):.0f} / {max(v):.0f}"),
+            ("Std Dev", lambda v, d: f"{statistics.stdev(v):.1f}" if len(v) > 1 else "n/a"),
+            ("Readings/hour", lambda v, d: f"{len(v) / hours:.1f}"),
+            ("Total readings", lambda v, d: f"{len(v)}"),
+            ("Outliers dropped", lambda v, d: f"{d}"),
         ]
 
         for row_label, fmt in rows:
             line = f"  {row_label:<26}"
             for label in board_labels:
-                values = board_data[label]
+                values, dropped = board_data[label]
                 if values:
-                    line += f"{fmt(values):<{col_width}}"
+                    line += f"{fmt(values, dropped):<{col_width}}"
                 else:
                     line += f"{'(no data)':<{col_width}}"
             print(line)
