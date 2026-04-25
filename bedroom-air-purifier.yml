@@ -54,6 +54,7 @@ levoit:
 fan:
   - platform: levoit
     levoit: levoit_core_300s
+    id: purifier_fan
     name: "Fan"
 
 switch:
@@ -98,7 +99,40 @@ sensor:
     name: "Filter Life"
     type: filter_life_left
   - platform: uptime
-    name: ${name} Uptime
+    name: "Uptime"
+  # Power model (calibrated 2026-04-07):
+  # - off: 0.2W standby
+  # - Sleep preset: 0.7W (fan runs below speed 1)
+  # - Manual or Auto: by reported speed (1/2/3 = 1.8/7.5/17.4W)
+  - platform: template
+    name: "Power"
+    id: purifier_power
+    unit_of_measurement: "W"
+    device_class: power
+    state_class: measurement
+    accuracy_decimals: 2
+    update_interval: 10s
+    lambda: |-
+      auto &f = *id(purifier_fan);
+      if (!f.state) return 0.2;
+      if (f.get_preset_mode() == "Sleep") return 0.7;
+      switch (f.speed) {
+        case 1: return 1.8;
+        case 2: return 7.5;
+        case 3: return 17.4;
+      }
+      return 0.2;
+  - platform: integration
+    name: "Energy"
+    sensor: purifier_power
+    time_unit: h
+    unit_of_measurement: "kWh"
+    device_class: energy
+    state_class: total_increasing
+    accuracy_decimals: 4
+    restore: true
+    filters:
+      - multiply: 0.001
 
 select:
   - platform: levoit
@@ -128,7 +162,7 @@ text_sensor:
     name: "Error"
     type: error_message
   - platform: version
-    name: ${name} ESPHome Version
+    name: "ESPHome Version"
 
 logger:
-  level: DEBUG
+  level: INFO
