@@ -1,0 +1,134 @@
+substitutions:
+  reboot_timeout: 1d
+  name: 'levoit-core-300s'
+  friendly_name: 'Levoit Core 300S'
+  static_ip: '192.168.20.81'
+
+packages:
+  wifi: !include common/wifi.yml
+  sensor_wifi: !include common/sensor_wifi.yml
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+
+# ESP32-SOLO-1 on the stock Core 300S logic board — single core, so enable
+# CONFIG_FREERTOS_UNICORE. Wired flash once via J1 / TP10 / TP33 (GPIO0→GND to
+# enter bootloader, 3.3V only), OTA from then on.
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf
+    sdkconfig_options:
+      CONFIG_FREERTOS_UNICORE: y
+
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+time:
+  - platform: homeassistant
+    id: homeassistant_time
+
+external_components:
+  - source: github://tuct/levoit
+    components: [levoit]
+
+# ESP32 GPIO16/17 <-> Tuya U2 MCU pins 13/14, 8N1 @ 115200.
+# U2 drives the fan, display, capacitive buttons, and Cubic PM2008MS sensor;
+# we only see it over this UART.
+uart:
+  - id: uart_mcu2esp
+    tx_pin: GPIO17
+    rx_pin: GPIO16
+    baud_rate: 115200
+
+levoit:
+  id: levoit_core_300s
+  model: CORE300S
+
+fan:
+  - platform: levoit
+    levoit: levoit_core_300s
+    name: "Fan"
+
+switch:
+  - platform: levoit
+    levoit: levoit_core_300s
+    name: "Display"
+    type: display
+  - platform: levoit
+    levoit: levoit_core_300s
+    name: "Child Lock"
+    type: child_lock
+
+number:
+  - platform: levoit
+    levoit: levoit_core_300s
+    name: "Timer"
+    type: timer
+  - platform: levoit
+    levoit: levoit_core_300s
+    name: "Auto Mode Room Size"
+    type: efficiency_room_size
+  - platform: levoit
+    levoit: levoit_core_300s
+    name: "Filter Months"
+    type: filter_lifetime_months
+
+sensor:
+  - platform: levoit
+    levoit: levoit_core_300s
+    name: "PM 2.5"
+    type: pm25
+  - platform: levoit
+    levoit: levoit_core_300s
+    name: "AQI"
+    type: aqi
+  - platform: levoit
+    levoit: levoit_core_300s
+    name: "Current CADR"
+    type: current_cadr
+  - platform: levoit
+    levoit: levoit_core_300s
+    name: "Filter Life"
+    type: filter_life_left
+  - platform: uptime
+    name: ${name} Uptime
+
+select:
+  - platform: levoit
+    levoit: levoit_core_300s
+    name: "Auto Mode"
+    type: auto_mode
+
+button:
+  - platform: levoit
+    levoit: levoit_core_300s
+    name: "Filter Reset"
+    type: reset_filter_stats
+
+binary_sensor:
+  - platform: levoit
+    levoit: levoit_core_300s
+    name: "Filter Low"
+    type: filter_low
+
+text_sensor:
+  - platform: levoit
+    levoit: levoit_core_300s
+    name: "Timer Remaining"
+    type: timer_duration_remaining
+  - platform: levoit
+    levoit: levoit_core_300s
+    name: "Error"
+    type: error_message
+  - platform: version
+    name: ${name} ESPHome Version
+
+logger:
+  level: DEBUG
