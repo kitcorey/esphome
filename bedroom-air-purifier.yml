@@ -1,7 +1,7 @@
 substitutions:
   reboot_timeout: 1d
-  name: 'levoit-core-300s'
-  friendly_name: 'Levoit Core 300S'
+  name: 'bedroom-air-purifier'
+  friendly_name: 'Master Bedroom Purifier'
   static_ip: '192.168.20.81'
 
 packages:
