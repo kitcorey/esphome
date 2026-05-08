@@ -4,6 +4,13 @@ substitutions:
   friendly_name: 'Bedroom Headboard'
   static_ip: '192.168.20.99'
   sunrise_light_id: light_1
+  # Intentionally low: ESP32-C3 LEDC trades frequency for bit-depth off the
+  # 80 MHz APB clock, so >~5 kHz caps resolution at 12 bits (4096 steps) while
+  # ~1 kHz allows the full 14 bits (16384 steps). The extra resolution matters
+  # at the bottom of the sunrise fade (gamma 2.8 + ~0.5% brightness lives in
+  # the lowest few duty-cycle steps); 1220 Hz is audible but no whine is
+  # observed from this hardware.
+  pwm_frequency: '1220Hz'
 
 esp32:
   board: esp32-c3-devkitm-1
@@ -36,32 +43,26 @@ ota:
   - platform: esphome
     password: !secret ota_password
 
-# PWM frequency is intentionally low: ESP32-C3 LEDC trades frequency for
-# bit-depth off the 80 MHz APB clock, so >~5 kHz caps resolution at 12 bits
-# (4096 steps) while ~1 kHz allows the full 14 bits (16384 steps). The extra
-# resolution matters at the bottom of the sunrise fade (gamma 2.8 + ~0.5%
-# brightness lives in the lowest few duty-cycle steps); 1220 Hz is audible
-# but no whine is observed from this hardware.
 output:
   - platform: ledc
     pin: GPIO3
-    frequency: 1220Hz
+    frequency: ${pwm_frequency}
     id: pwm_r
   - platform: ledc
     pin: GPIO0
-    frequency: 1220Hz
+    frequency: ${pwm_frequency}
     id: pwm_g
   - platform: ledc
     pin: GPIO1
-    frequency: 1220Hz
+    frequency: ${pwm_frequency}
     id: pwm_b
   - platform: ledc
     pin: GPIO4
-    frequency: 1220Hz
+    frequency: ${pwm_frequency}
     id: pwm_ww
   - platform: ledc
     pin: GPIO5
-    frequency: 1220Hz
+    frequency: ${pwm_frequency}
     id: pwm_cw
 
 light:
