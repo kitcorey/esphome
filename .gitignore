@@ -14,6 +14,7 @@ __pycache__/
 /secrets.yaml
 .claude/
 .env
+sunrise_validation_*.jsonl
 
 # These symlinked from another repo
 airgradient-one.yaml
