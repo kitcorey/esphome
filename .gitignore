@@ -13,6 +13,7 @@ __pycache__/
 .build/*
 /secrets.yaml
 .claude/
+.env
 
 # These symlinked from another repo
 airgradient-one.yaml
