@@ -85,10 +85,22 @@ interval:
                 if (bri < 0.005f) bri = 0.005f;
 
                 // Three-phase color path:
-                //   0.00–0.30  deep red → red-orange  (RGB only, white=0)
-                //   0.30–0.65  orange → amber          (RGB only, white=0)
+                //   0.00–0.30  deep red → red-orange  (RGB amber + warm white)
+                //   0.30–0.65  orange → amber          (RGB amber + warm white)
                 //   0.65–1.00  crossfade RGB → warm white, CCT 2400→3500 K
-                float r = 1.0f, g = 0.12f, b = 0.0f, w = 0.0f;
+                //
+                // Warm-white runs at 100% throughout; the master brightness
+                // (set_brightness) controls its output level, so phases 1-2
+                // already get most of their visible light from the warm-white
+                // LED with the RGB channels tinting it. Phase 3 fades RGB out
+                // (via color_brightness) and ramps cold_white in to shift CCT
+                // from 2400 K to ~3500 K.
+                //
+                // Avoid set_white on rgbww — it overwrites brightness with the
+                // white value (light_call.cpp:417). Drive cold/warm white
+                // directly instead.
+                float r = 1.0f, g = 0.12f, b = 0.0f;
+                float color_bri = 1.0f, ww = 1.0f, cw = 0.0f;
                 float kelvin = 2400.0f;
                 if (p < 0.30f) {
                   float k = p / 0.30f;
@@ -98,25 +110,29 @@ interval:
                   g = 0.42f + 0.40f * k;
                   b = 0.05f * k;
                 } else {
+                  // Clamp: float division of (1.0-0.65)/0.35 lands at 1.0000005,
+                  // pushing cw above 1.0 and color_bri below 0 at the final tick.
                   float k = (p - 0.65f) / 0.35f;
-                  r = 1.0f - 0.40f * k;
-                  g = 0.82f - 0.20f * k;
-                  b = 0.05f + 0.45f * k;
-                  w = k;
+                  if (k > 1.f) k = 1.f;
+                  // Hold RGB at end-of-phase-2 amber; fade its share to 0.
+                  g = 0.82f;
+                  b = 0.05f;
+                  color_bri = 1.0f - k;
+                  // Cold-white to full alongside warm-white lands near 3500 K.
+                  cw = k;
                   kelvin = 2400.0f + 1100.0f * k;
                 }
 
                 auto call = id(${sunrise_light_id}).turn_on();
                 call.set_transition_length(2000);
                 call.set_brightness(bri);
+                call.set_color_brightness(color_bri);
                 call.set_red(r);
                 call.set_green(g);
                 call.set_blue(b);
-                // Skip set_white when w==0: in RGB_COLD_WARM_WHITE mode it
-                // would overwrite brightness with white (light_call.cpp ~L402),
-                // collapsing turn_on to turn_off.
-                if (w > 0.0f) call.set_white(w);
-                call.set_color_temperature(1000000.0f / kelvin);  // ESPHome LightCall takes mireds
+                call.set_cold_white(cw);
+                call.set_warm_white(ww);
+                call.set_color_temperature(1000000.0f / kelvin);  // mireds, for HA state reporting
                 call.perform();
 
                 if (p >= 1.0f) {
