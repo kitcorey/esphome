@@ -3,6 +3,7 @@ substitutions:
   name: 'bedroom-headboard'
   friendly_name: 'Bedroom Headboard'
   static_ip: '192.168.20.99'
+  sunrise_light_id: light_1
 
 esp32:
   board: esp32-c3-devkitm-1
@@ -12,6 +13,7 @@ esp32:
 packages:
   wifi: !include common/wifi.yml
   sensor_wifi: !include common/sensor_wifi.yml
+  sunrise: !include common/sunrise.yml
 
 esphome:
   name: "${name}"
@@ -33,10 +35,6 @@ api:
 ota:
   - platform: esphome
     password: !secret ota_password
-
-sun:
-  latitude: !secret latitude
-  longitude: !secret longitude
 
 output:
   - platform: ledc
@@ -71,65 +69,6 @@ light:
     warm_white: pwm_ww
     warm_white_color_temperature: 2400 K
     cold_white_color_temperature: 6500 K
-    effects:
-    - automation:
-        name: Sunrise
-        sequence:
-          - light.turn_on:
-              id: light_1 #xy [0.65,0.41]
-              red: 100% #255
-              green: 45% #132
-              blue: 0% #0
-              white: 0%
-              brightness: 10%
-          - delay: 60s
-          - light.turn_on:
-              id: light_1 #xy [0.60,0.40]
-              red: 100% #255
-              green: 51.7% #145
-              blue: 0% #0
-              white: 0%
-              brightness: 33% #85
-              transition_length: 60s
-          - delay: 60s
-          - light.turn_on:
-              id: light_1 #xy [0.48,0.40]
-              red: 100% #255
-              green: 51.7% #190
-              blue: 0% #109
-              white: 0%
-              brightness: 66% #170
-              transition_length: 60s
-          - delay: 60s
-          - light.turn_on:
-              id: light_1 #xy [0.48,0.40]
-              red: 100% #255
-              green: 51.7% #190
-              blue: 0% #109
-              white: 1%
-              color_temperature: 2400 K
-              brightness: 66% #170
-              transition_length: 60s
-          - delay: 60s
-          - light.turn_on:
-              id: light_1 #xy [0.48,0.40]
-              red: 100% #255
-              green: 51.7% #190
-              blue: 0% #109
-              white: 100%
-              color_temperature: 2400 K
-              brightness: 66% #170
-              transition_length: 60s
-          - delay: 60s
-          - light.turn_on:
-              id: light_1
-              white: 100%
-              color_temperature: 2400 K
-              brightness: 0%
-              transition_length: 60s
-          - delay: 1800s
-          - light.turn_off:
-              id: light_1
 
 sensor:
   - platform: uptime
