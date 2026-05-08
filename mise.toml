@@ -1,6 +1,19 @@
 [tools]
 python = "3.13"
 uv = "latest"
+gitleaks = "latest"
 
 [env]
 _.file = ".env"
+
+[tasks.install-hooks]
+description = "Point git at the versioned hooks directory (run once per clone)"
+run = "git config core.hooksPath scripts/hooks"
+
+[tasks.gitleaks]
+description = "Scan staged changes for secrets"
+run = "gitleaks git --pre-commit --staged --redact --verbose"
+
+[tasks.gitleaks-full]
+description = "Scan the full git history for secrets"
+run = "gitleaks git --redact --verbose"

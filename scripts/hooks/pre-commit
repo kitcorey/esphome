@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+exec mise exec -- gitleaks git --pre-commit --staged --redact --verbose
