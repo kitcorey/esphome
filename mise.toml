@@ -17,3 +17,11 @@ run = "gitleaks git --pre-commit --staged --redact --verbose"
 [tasks.gitleaks-full]
 description = "Scan the full git history for secrets"
 run = "gitleaks git --redact --verbose"
+
+[tasks.clean]
+description = "Run `esphome clean` on a specific device config"
+run = "uv run esphome clean"
+
+[tasks.clean-all]
+description = "Run `esphome clean-all` (wipes shared caches too)"
+run = "uv run esphome clean-all ."
