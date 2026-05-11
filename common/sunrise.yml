@@ -87,14 +87,17 @@ interval:
                 // Three-phase color path:
                 //   0.00–0.30  deep red → red-orange  (RGB amber + warm white)
                 //   0.30–0.65  orange → amber          (RGB amber + warm white)
-                //   0.65–1.00  crossfade RGB → warm white, CCT 2400→3500 K
+                //   0.65–1.00  hold RGB at peak amber, ramp cold_white in on top,
+                //              CCT report shifts 2400→3500 K
                 //
                 // Warm-white runs at 100% throughout; the master brightness
                 // (set_brightness) controls its output level, so phases 1-2
                 // already get most of their visible light from the warm-white
-                // LED with the RGB channels tinting it. Phase 3 fades RGB out
-                // (via color_brightness) and ramps cold_white in to shift CCT
-                // from 2400 K to ~3500 K.
+                // LED with the RGB channels tinting it. Phase 3 keeps the RGB
+                // amber at full and ramps cold_white in on top for added
+                // brightness at the peak; the reported CCT shifts from 2400 K
+                // toward ~3500 K (HA reports rgbww color_mode while RGB is on,
+                // so the CCT value is informational).
                 //
                 // Avoid set_white on rgbww — it overwrites brightness with the
                 // white value (light_call.cpp:417). Drive cold/warm white
@@ -114,10 +117,10 @@ interval:
                   // pushing cw above 1.0 and color_bri below 0 at the final tick.
                   float k = (p - 0.65f) / 0.35f;
                   if (k > 1.f) k = 1.f;
-                  // Hold RGB at end-of-phase-2 amber; fade its share to 0.
+                  // Hold RGB at end-of-phase-2 amber; cold_white ramps in on top to add brightness.
                   g = 0.82f;
                   b = 0.05f;
-                  color_bri = 1.0f - k;
+                  color_bri = 1.0f;
                   // Cold-white to full alongside warm-white lands near 3500 K.
                   cw = k;
                   kelvin = 2400.0f + 1100.0f * k;
