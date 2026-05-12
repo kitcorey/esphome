@@ -30,7 +30,7 @@ hooks {
     }
     ["check"] {
         steps {
-            ["gitleaks-staged"] = gitleaksStaged
+            ["gitleaks-history"] = gitleaksHistory
             ["yamllint"] = yamllintAll
         }
     }
