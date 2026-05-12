@@ -4,6 +4,7 @@ uv = "latest"
 gitleaks = "latest"
 hk = "1.45"
 pkl = "0.31"
+yamllint = "latest"
 
 [env]
 _.file = ".env"

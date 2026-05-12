@@ -9,11 +9,18 @@ local gitleaksHistory: Step = new Step {
     check = "mise exec -- gitleaks git --redact --verbose"
 }
 
+local yamllintCheck: Step = Builtins.yamllint
+
+local yamllintAll: Step = new Step {
+    check = "mise exec -- yamllint --strict ."
+}
+
 hooks {
     ["pre-commit"] {
         stash = "git"
         steps {
             ["gitleaks-staged"] = gitleaksStaged
+            ["yamllint"] = yamllintCheck
         }
     }
     ["pre-push"] {
@@ -24,6 +31,7 @@ hooks {
     ["check"] {
         steps {
             ["gitleaks-staged"] = gitleaksStaged
+            ["yamllint"] = yamllintAll
         }
     }
 }

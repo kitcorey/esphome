@@ -1,0 +1,21 @@
+extends: default
+
+rules:
+  document-start: disable
+  truthy: disable
+  line-length: disable
+  comments: disable
+  comments-indentation: disable
+  trailing-spaces: disable
+  braces: disable
+  brackets: disable
+  indentation: disable
+  empty-lines: disable
+  new-line-at-end-of-file: disable
+
+ignore: |
+  .esphome/
+  .venv/
+  __pycache__/
+  secrets.yaml
+  common/secrets.yaml
