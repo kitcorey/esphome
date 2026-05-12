@@ -1,0 +1,29 @@
+amends "package://github.com/jdx/hk/releases/download/v1.45.0/hk@1.45.0#/Config.pkl"
+import "package://github.com/jdx/hk/releases/download/v1.45.0/hk@1.45.0#/Builtins.pkl"
+
+local gitleaksStaged: Step = new Step {
+    check = "mise exec -- gitleaks git --pre-commit --staged --redact --verbose"
+}
+
+local gitleaksHistory: Step = new Step {
+    check = "mise exec -- gitleaks git --redact --verbose"
+}
+
+hooks {
+    ["pre-commit"] {
+        stash = "git"
+        steps {
+            ["gitleaks-staged"] = gitleaksStaged
+        }
+    }
+    ["pre-push"] {
+        steps {
+            ["gitleaks-history"] = gitleaksHistory
+        }
+    }
+    ["check"] {
+        steps {
+            ["gitleaks-staged"] = gitleaksStaged
+        }
+    }
+}

@@ -10,15 +10,16 @@ ESPHome YAML configs for the devices on my home network, integrated into Home As
 ├── common/             # reusable packages (wifi.yml, sensor_wifi.yml, sunrise.yml, …)
 ├── secrets.yaml        # gitignored — Wi-Fi creds, API keys, OTA passwords
 ├── scripts/            # helper scripts (BLE list, MAC lookup, sunrise validator)
-│   └── hooks/          # versioned git hooks (gitleaks pre-commit)
+│   └── hooks/          # versioned git hooks (delegate to hk)
+├── hk.pkl              # hk hook config (pre-commit, pre-push)
 ├── mise.toml           # tool versions + tasks
 └── pyproject.toml      # uv-managed Python deps (esphome, aioesphomeapi, …)
 ```
 
 ## First-time setup
 
-1. `mise install` — installs Python 3.13, uv, gitleaks.
-2. `mise run install-hooks` — points `core.hooksPath` at `scripts/hooks` so commits get scanned by gitleaks.
+1. `mise install` — installs Python 3.13, uv, gitleaks, hk, pkl.
+2. `mise run install-hooks` — points `core.hooksPath` at `scripts/hooks` so hk runs on commit and push.
 3. `uv sync` — installs `esphome` and the rest of the Python deps.
 4. Drop your real `secrets.yaml` in the repo root (it's gitignored). See `common/wifi.yml` for the keys it expects.
 
@@ -51,8 +52,11 @@ uv run esphome clean   <config>.yml   # nuke build artifacts for one config
 
 ## Secret scanning
 
-`scripts/hooks/pre-commit` runs `gitleaks git --pre-commit --staged` on every commit. To scan the full history (e.g. before making the repo public):
+Hooks are orchestrated by [hk](https://hk.jdx.dev), configured in `hk.pkl`. The `pre-commit` hook runs `gitleaks` on staged changes; the `pre-push` hook runs it across full history.
 
 ```sh
-mise run gitleaks-full
+mise exec -- hk run check        # manual staged scan
+mise exec -- hk run pre-push     # manual full-history scan
 ```
+
+The hk version in `mise.toml` is pinned to match the `hk@x.y.z` URLs in `hk.pkl` — bump both together.
