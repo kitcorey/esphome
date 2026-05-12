@@ -1,17 +1,33 @@
+---
 extends: default
 
 rules:
-  document-start: disable
-  truthy: disable
-  line-length: disable
-  comments: disable
-  comments-indentation: disable
-  trailing-spaces: disable
-  braces: disable
-  brackets: disable
+  new-line-at-end-of-file: enable
+  comments-indentation: enable
+  empty-lines: enable
+
+  braces:
+    max-spaces-inside: 1
+  brackets:
+    max-spaces-inside: 1
+  line-length:
+    max: 120
+
+  trailing-spaces: enable
+  truthy:
+    check-keys: false
+  comments:
+    require-starting-space: true
+    min-spaces-from-content: 1
+  document-start: enable
+
   indentation: disable
-  empty-lines: disable
-  new-line-at-end-of-file: disable
+
+  float-values:
+    require-numeral-before-decimal: true
+    forbid-scientific-notation: true
+    forbid-nan: true
+    forbid-inf: true
 
 ignore: |
   .esphome/
