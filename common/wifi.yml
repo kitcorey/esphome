@@ -1,3 +1,4 @@
+---
 wifi:
   domain: !secret wifi_domain
   fast_connect: true

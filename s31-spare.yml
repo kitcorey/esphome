@@ -1,3 +1,4 @@
+---
 substitutions:
   reboot_timeout: 1d
   name: 's31-spare'

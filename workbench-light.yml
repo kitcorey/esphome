@@ -1,3 +1,4 @@
+---
 # mac: 84:CC:A8:9E:87:48
 substitutions:
   reboot_timeout: 1d
