@@ -29,7 +29,7 @@ time:
     id: homeassistant_time
 
 logger:
-  level: DEBUG 
+  level: DEBUG
 
 api:
   encryption:

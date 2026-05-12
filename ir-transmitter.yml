@@ -16,11 +16,11 @@ packages:
 # 05	IRrecv (51)	IR Receiver
 # 13	Button1 (17)	Button
 # 14	IRsend (8)	IR Transmitter
-  
+
 remote_transmitter:
   pin: GPIO14
   carrier_duty_percent: 50%
-  
+
 remote_receiver:
   id: rcvr
   pin:
@@ -70,7 +70,7 @@ button:
     name: "Fairy Lights Green"
     on_press:
       - remote_transmitter.transmit_nec:
-          address: 0x7F80 
+          address: 0x7F80
           command: 0xFA05
   - platform: template
     name: "Fairy Lights Blue"
@@ -119,7 +119,7 @@ button:
     on_press:
       - remote_transmitter.transmit_nec:
           address: 0x7F80
-          command: 0xF30C 
+          command: 0xF30C
   - platform: template
     name: "Fairy Lights Blue Green"
     on_press:
