@@ -1,0 +1,18 @@
+substitutions:
+  reboot_timeout: 1d
+  name: 's31-spare'
+  friendly_name: 'S31 Spare'
+  static_ip: '192.168.20.98'
+  # Per https://devices.esphome.io/devices/Sonoff-S31 this should be esp12e
+  # Need to check each board to verify flash size
+  # https://www.reddit.com/r/Esphome/comments/1azrp34/sonoff_s31_failed_ota_update_after_20242/
+  # 4MB - esp12e
+  # 1MB - esp01_1m
+  board: esp12e
+
+packages:
+  s31_base: !include common/s31_base.yml
+  wifi: !include common/wifi.yml
+  sensor_wifi: !include common/sensor_wifi.yml
+  sun: !include common/sun.yml
+  s31_power: !include common/s31_power.yml
