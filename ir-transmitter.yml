@@ -25,7 +25,7 @@ remote_receiver:
   id: rcvr
   pin:
     number: GPIO5
-    inverted: True
+    inverted: true
   tolerance: 55%
   dump: all
 
