@@ -1,4 +1,4 @@
-#mac: 84:CC:A8:9E:87:48
+# mac: 84:CC:A8:9E:87:48
 substitutions:
   reboot_timeout: 1d
   name: 'workbench-light'
@@ -20,4 +20,4 @@ packages:
   sensor_wifi: !include common/sensor_wifi.yml
   sun: !include common/sun.yml
   s31_power: !include common/s31_power.yml
-  #espsense: !include common/espsense.yml
+  # espsense: !include common/espsense.yml
