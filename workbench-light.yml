@@ -21,4 +21,5 @@ packages:
   sensor_wifi: !include common/sensor_wifi.yml
   sun: !include common/sun.yml
   s31_power: !include common/s31_power.yml
+  garage_roam: !include common/garage_wifi_roam.yml
   # espsense: !include common/espsense.yml

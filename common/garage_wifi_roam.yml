@@ -1,0 +1,50 @@
+---
+# Slow drift back to the garage nanoHD (e0:63:da:28:67:f7) after a
+# power-blip strands the device on the distant U7-Pro.
+#
+# Two mechanisms:
+# 1. fast_connect is disabled and a priority-100 network entry pins the
+#    nano's BSSID. On every wifi connection attempt, the scan-based path
+#    orders networks by priority and the BSSID-pinned entry wins (when
+#    the nano is reachable). If not reachable, falls back to the
+#    priority-0 no-BSSID entry from common/wifi.yml.
+# 2. Every 4 h, if the current BSSID isn't the nano's, briefly disable
+#    and re-enable wifi to force a fresh connection attempt — which
+#    then lands on the nano via mechanism (1).
+#
+# Tied to the nanoHD's hardware MAC. If the nano is replaced, update
+# `nano_bssid_not` in secrets.yaml. The value must be UPPERCASE to match
+# what ESPHome's wifi_info text_sensor reports (compare is case-sensitive).
+
+substitutions:
+  nano_bssid_not: !secret nano_bssid_not
+
+wifi:
+  fast_connect: false
+  networks:
+    - ssid: !secret wifi_ssid
+      password: !secret wifi_password
+      hidden: true
+      bssid: !secret nano_bssid_not
+      priority: 100
+
+text_sensor:
+  - platform: wifi_info
+    bssid:
+      id: garage_roam_bssid
+
+interval:
+  - interval: 4h
+    then:
+      # Jitter 0-10 min so a shared-cause reboot (e.g. garage power blip)
+      # doesn't fire all four S31s in lockstep every 4 h thereafter.
+      - delay: !lambda "return random_uint32() % 600000;"
+      - if:
+          condition:
+            lambda: |-
+              return id(garage_roam_bssid).state != "${nano_bssid_not}";
+          then:
+            - logger.log: 'Not on nanoHD BSSID, forcing reconnect'
+            - wifi.disable:
+            - delay: 5s
+            - wifi.enable:
