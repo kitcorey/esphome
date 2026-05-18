@@ -23,3 +23,6 @@ packages:
   s31_power: !include common/s31_power.yml
   garage_roam: !include common/garage_wifi_roam.yml
   # espsense: !include common/espsense.yml
+
+esphome:
+  friendly_name: '${friendly_name}'

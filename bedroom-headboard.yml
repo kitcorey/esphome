@@ -25,6 +25,7 @@ packages:
 
 esphome:
   name: "${name}"
+  friendly_name: "${friendly_name}"
   platformio_options:
     board_build.flash_mode: dio
 
@@ -69,7 +70,7 @@ output:
 light:
   - platform: rgbww
     id: light_1
-    name: "${friendly_name}"
+    name: None
     red: pwm_r
     green: pwm_g
     blue: pwm_b
@@ -80,14 +81,14 @@ light:
 
 sensor:
   - platform: uptime
-    name: "${name} Uptime Sensor"
+    name: "Uptime"
 
   - platform: internal_temperature
-    name: "${name} Internal Temperature"
+    name: "Internal Temperature"
     accuracy_decimals: 2
     update_interval: 30s
 
 switch:
   - platform: restart
-    name: ${name}-restart
+    name: "Restart"
     id: restart_switch

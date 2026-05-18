@@ -22,3 +22,6 @@ packages:
   sun: !include common/sun.yml
   s31_power: !include common/s31_power.yml
   garage_roam: !include common/garage_wifi_roam.yml
+
+esphome:
+  friendly_name: '${friendly_name}'

@@ -17,7 +17,7 @@ binary_sensor:
     on_press:
       - switch.toggle: fakebutton
   - platform: template
-    name: "${friendly_name} Running"
+    name: "Running"
     filters:
       - delayed_off: 15s
     lambda: |-
@@ -31,7 +31,7 @@ binary_sensor:
 
 switch:
   - platform: template
-    name: "${friendly_name} Switch"
+    name: "Switch"
     optimistic: true
     id: fakebutton
     turn_on_action:
@@ -53,26 +53,26 @@ output:
 
 light:
   - platform: monochromatic
-    name: "${friendly_name} Blue LED"
+    name: "Blue LED"
     output: pow_blue_led
     id: led
 
 sensor:
   - platform: uptime
-    name: "${friendly_name} Uptime"
+    name: "Uptime"
   - platform: cse7766
     current:
-      name: "${friendly_name} Current"
+      name: "Current"
       id: current_sensor
       filters:
         - throttle_average: ${update_interval}
     voltage:
-      name: "${friendly_name} Voltage"
+      name: "Voltage"
       id: voltage_sensor
       filters:
         - throttle_average: ${update_interval}
     power:
-      name: "${friendly_name} Power"
+      name: "Power"
       id: power_sensor
       on_value_range:
         - above: 3.0
@@ -85,22 +85,22 @@ sensor:
       filters:
         - throttle_average: ${update_interval}
     energy:
-      name: "${friendly_name} Energy"
+      name: "Energy"
       id: energy_sensor
       filters:
         - throttle: ${update_interval}
     apparent_power:
-      name: "${friendly_name} Apparent Power"
+      name: "Apparent Power"
       id: apparent_power_sensor
       filters:
         - throttle_average: ${update_interval}
     power_factor:
-      name: "${friendly_name} Power Factor"
+      name: "Power Factor"
       id: power_factor_sensor
       filters:
         - throttle_average: ${update_interval}
   - platform: total_daily_energy
-    name: "${friendly_name} Total Daily Energy"
+    name: "Total Daily Energy"
     power_id: power_sensor
     device_class: energy
     state_class: total_increasing

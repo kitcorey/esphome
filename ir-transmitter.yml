@@ -12,6 +12,9 @@ packages:
   sensor_wifi: !include common/sensor_wifi.yml
   sun: !include common/sun.yml
 
+esphome:
+  friendly_name: '${friendly_name}'
+
 # GPIO	Component	Description
 # 04	LED1i (52)	Blue LED - Link status
 # 05	IRrecv (51)	IR Receiver
