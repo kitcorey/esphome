@@ -14,6 +14,7 @@ __pycache__/
 /secrets.yaml
 .claude/
 .env
+.mcp.json
 sunrise_validation_*.jsonl
 opengarage-*-backup.json
 opengarage-flash-backup-*.bin
