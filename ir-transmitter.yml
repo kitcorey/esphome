@@ -22,6 +22,7 @@ esphome:
 # 14	IRsend (8)	IR Transmitter
 
 remote_transmitter:
+  id: ir_tx
   pin: GPIO14
   carrier_duty_percent: 50%
 
@@ -32,6 +33,15 @@ remote_receiver:
     inverted: true
   tolerance: 55%
   dump: all
+
+infrared:
+  - platform: ir_rf_proxy
+    name: "IR Transmitter"
+    remote_transmitter_id: ir_tx
+  - platform: ir_rf_proxy
+    name: "IR Receiver"
+    remote_receiver_id: rcvr
+    receiver_frequency: 38kHz
 
 # Use the blue LED as a status light.
 #   Blink slowly = Temporary issue (WiFi/MQTT disconnected, sensor unavailable, ...)
