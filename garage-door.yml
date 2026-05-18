@@ -1,4 +1,11 @@
 ---
+# Inspired by gabe565/esphome-configs (opengarage/) — same hardware family.
+# https://github.com/gabe565/esphome-configs/tree/main/opengarage
+# Borrowed: HA-tunable thresholds, status_led, current_operation OPENING/
+# CLOSING transitions, delta-filtered distance, self-pulsing relay,
+# play_rtttl service. Deliberately diverged: median+delayed_on stack vs.
+# wide-median-only; mandatory close warning (UL325) vs. toggle.
+#
 # OpenGarage v2.2 hardware (ESP-12 module, 4MB flash, no Security+).
 # Pin map per OpenGarage hardware repo — use raw GPIO numbers, NOT D-notation
 # (D5/D6 cause bootloop on this hardware revision).
@@ -8,12 +15,82 @@ substitutions:
   friendly_name: 'Garage Door'
   static_ip: '192.168.20.14'  # keep current OG IP to avoid HA / DNS churn
   board: esp12e
+  open_delay: 22s    # rough wall-clock time for door to fully open
+  close_delay: 15s   # ditto for close
 
 packages:
   s31_base: !include common/s31_base.yml
   wifi: !include common/wifi.yml
   sensor_wifi: !include common/sensor_wifi.yml
   garage_roam: !include common/garage_wifi_roam.yml
+
+# Merges with common/s31_base.yml (board: from there) to enable persistence
+# for the HA-tunable number entities below.
+esp8266:
+  restore_from_flash: true
+
+# Merges with common/s31_base.yml (encryption etc. from there) — exposes
+# an HA service to play an arbitrary RTTTL string through the buzzer.
+api:
+  services:
+    - service: play_rtttl
+      variables:
+        song_str: string
+      then:
+        - rtttl.play:
+            rtttl: !lambda 'return song_str;'
+
+# Onboard ESP-12 LED — ESPHome core status indicator (WiFi/API health).
+status_led:
+  pin:
+    number: GPIO2
+    inverted: true
+
+# HA-tunable thresholds (persisted via restore_from_flash above).
+# Stored in cm for readability in the HA UI; lambdas divide by 100 to get
+# meters to match the ultrasonic sensor's internal units.
+number:
+  - platform: template
+    name: '${friendly_name} Door Threshold'
+    id: door_threshold_cm
+    min_value: 10
+    max_value: 300
+    step: 1
+    optimistic: true
+    restore_value: true
+    initial_value: 50
+    entity_category: config
+    mode: box
+    unit_of_measurement: cm
+    icon: mdi:garage
+
+  - platform: template
+    name: '${friendly_name} Vehicle Threshold'
+    id: vehicle_threshold_cm
+    min_value: 10
+    max_value: 400
+    step: 1
+    optimistic: true
+    restore_value: true
+    initial_value: 150
+    entity_category: config
+    mode: box
+    unit_of_measurement: cm
+    icon: mdi:car
+
+  - platform: template
+    name: '${friendly_name} Relay Click Time'
+    id: relay_click_time_ms
+    min_value: 100
+    max_value: 2000
+    step: 10
+    optimistic: true
+    restore_value: true
+    initial_value: 1000
+    entity_category: config
+    mode: box
+    unit_of_measurement: ms
+    icon: mdi:timer
 
 # HC-SR04 ultrasonic — drives door + vehicle state.
 # OG defaults: dri=500 ms (read interval), sfi=1 + cmr=10 (consensus filter
@@ -32,6 +109,10 @@ sensor:
     filters:
       # 7-sample rolling median = 3.5 s window; immune to up to 3 outliers.
       # Push every reading (send_every: 1) for fastest state propagation.
+      # delta: drops readings <1 cm from the last published value, cutting
+      # idle chatter to HA. Lambdas read .state (the last published value),
+      # but thresholds are coarse enough (50/150 cm) that the dead-zone
+      # doesn't matter for on-device state evaluation.
       #
       # If false positives reappear, tune in this order (slower but stronger):
       #   1. Widen median window_size — tolerates floor(N/2) outliers per
@@ -50,17 +131,19 @@ sensor:
       - median:
           window_size: 7
           send_every: 1
+      - delta: 0.01
 
 binary_sensor:
-  # Door closed: distance >= 50 cm (OG dth=50). Below that, the ceiling-mounted
-  # sensor sees the door panel raised under it → door is open.
+  # Door closed: distance >= door_threshold_cm (default 50, OG dth=50).
+  # Below that, the ceiling-mounted sensor sees the door panel raised under
+  # it → door is open. Threshold is HA-tunable via number.door_threshold_cm.
   - platform: template
     id: door_closed
     name: '${friendly_name} Closed'
     device_class: garage_door
     lambda: |-
       if (isnan(id(door_distance).state)) return {};
-      return id(door_distance).state >= 0.50f;
+      return id(door_distance).state >= id(door_threshold_cm).state / 100.0f;
     filters:
       # Consensus equivalent: require sustained state for 5 s before flipping.
       # Stacked on the 7-sample median above, no single spurious reading can
@@ -68,7 +151,8 @@ binary_sensor:
       - delayed_on: 5s
       - delayed_off: 5s
 
-  # Vehicle present: 50 cm <= distance < 150 cm (OG dth=50, vth=150).
+  # Vehicle present: door_threshold_cm <= distance < vehicle_threshold_cm
+  # (defaults 50 / 150, OG dth=50, vth=150).
   # Longer debounce — vehicle movement is slow, no need to report quickly.
   - platform: template
     id: vehicle_present
@@ -77,7 +161,9 @@ binary_sensor:
     lambda: |-
       float d = id(door_distance).state;
       if (isnan(d)) return {};
-      return d >= 0.50f && d < 1.50f;
+      float dt = id(door_threshold_cm).state / 100.0f;
+      float vt = id(vehicle_threshold_cm).state / 100.0f;
+      return d >= dt && d < vt;
     filters:
       - delayed_on: 10s
       - delayed_off: 10s
@@ -96,18 +182,25 @@ binary_sensor:
       - delayed_on: 50ms
 
 # Relay (GPIO15) — momentary pulse to fire the opener's button input.
-# Internal: only the cover should drive it.
+# Self-pulsing: on_turn_on schedules its own turn_off after relay_click_time_ms,
+# so callers just `switch.turn_on` and forget. Internal: only the cover and
+# warn_then_close should drive it.
 switch:
   - platform: gpio
     pin: GPIO15
     id: garage_relay
     restore_mode: ALWAYS_OFF
     internal: true
+    on_turn_on:
+      - delay: !lambda "return (uint32_t) id(relay_click_time_ms).state;"
+      - switch.turn_off: garage_relay
 
 # Template cover wrapping ultrasonic (state) + relay (action).
 # Close is gated by a 5 s warning beep — replicates OG alm=1+aoo=1
 # (UL325-style safety: warn anyone in the bay before remote close).
 # Open and stop fire immediately (no warning needed; opening can't pinch).
+# open_action/close_action publish current_operation so HA shows the
+# transient OPENING/CLOSING state, then IDLE once the door should be settled.
 cover:
   - platform: template
     name: '${friendly_name}'
@@ -118,19 +211,35 @@ cover:
     lambda: |-
       if (id(door_closed).state) return COVER_CLOSED;
       return COVER_OPEN;
-    open_action: &pulse
+    open_action:
+      - cover.template.publish:
+          id: garage_door
+          current_operation: OPENING
       - switch.turn_on: garage_relay
-      - delay: 1s             # OG cdt default = 1000 ms
-      - switch.turn_off: garage_relay
-    stop_action: *pulse
+      - delay: ${open_delay}
+      - cover.template.publish:
+          id: garage_door
+          current_operation: IDLE
+    stop_action:
+      - switch.turn_on: garage_relay
+      - cover.template.publish:
+          id: garage_door
+          current_operation: IDLE
     close_action:
       - if:
           # Skip warning if door's already closed — relay would do nothing.
           condition:
             binary_sensor.is_off: door_closed
           then:
+            - cover.template.publish:
+                id: garage_door
+                current_operation: CLOSING
             - script.execute: warn_then_close
             - script.wait: warn_then_close
+            - delay: ${close_delay}
+            - cover.template.publish:
+                id: garage_door
+                current_operation: IDLE
 
 # Buzzer (GPIO13) and warning script.
 output:
@@ -154,5 +263,3 @@ script:
           not:
             rtttl.is_playing:
       - switch.turn_on: garage_relay
-      - delay: 1s
-      - switch.turn_off: garage_relay
