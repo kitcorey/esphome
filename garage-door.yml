@@ -1,0 +1,158 @@
+---
+# OpenGarage v2.2 hardware (ESP-12 module, 4MB flash, no Security+).
+# Pin map per OpenGarage hardware repo — use raw GPIO numbers, NOT D-notation
+# (D5/D6 cause bootloop on this hardware revision).
+substitutions:
+  reboot_timeout: 1d
+  name: 'garage-door'
+  friendly_name: 'Garage Door'
+  static_ip: '192.168.20.14'  # keep current OG IP to avoid HA / DNS churn
+  board: esp12e
+
+packages:
+  s31_base: !include common/s31_base.yml
+  wifi: !include common/wifi.yml
+  sensor_wifi: !include common/sensor_wifi.yml
+  garage_roam: !include common/garage_wifi_roam.yml
+
+# HC-SR04 ultrasonic — drives door + vehicle state.
+# OG defaults: dri=500 ms (read interval), sfi=1 + cmr=10 (consensus filter
+# over 10 readings to suppress spurious echoes). The user has hit false
+# positives on this hardware before; replicate consensus with a stacked
+# median (sample-level outlier rejection) + delayed_on/off (state-level
+# debounce) — stronger and idiomatic on ESPHome.
+sensor:
+  - platform: ultrasonic
+    trigger_pin: GPIO12
+    echo_pin: GPIO14
+    id: door_distance
+    name: '${friendly_name} Distance'
+    update_interval: 500ms     # matches OG dri
+    timeout: 4.0m
+    filters:
+      # 7-sample rolling median = 3.5 s window; immune to up to 3 outliers.
+      # Push every reading (send_every: 1) for fastest state propagation.
+      #
+      # If false positives reappear, tune in this order (slower but stronger):
+      #   1. Widen median window_size — tolerates floor(N/2) outliers per
+      #      window, but lags real transitions by ~N/2 samples (500 ms each).
+      #        11 → 5 outliers, 5.5 s window
+      #        15 → 7 outliers, 7.5 s window
+      #        21 → 10 outliers, 10.5 s window
+      #   2. Lengthen delayed_on/off on door_closed and vehicle_present
+      #      below — each added second is a second of HA-visible lag, but
+      #      requires sustained classification before flipping state.
+      #   3. (Rare) stack a sliding_window_moving_average after the median
+      #      if clusters of bad samples slip through.
+      # Scale value + state layers together rather than maxing one. First
+      # preset to try if 7 + 5 s isn't enough: window_size 15 + delayed_on/
+      # off 10 s → ~17 s worst-case lag, bulletproof against typical bursts.
+      - median:
+          window_size: 7
+          send_every: 1
+
+binary_sensor:
+  # Door closed: distance >= 50 cm (OG dth=50). Below that, the ceiling-mounted
+  # sensor sees the door panel raised under it → door is open.
+  - platform: template
+    id: door_closed
+    name: '${friendly_name} Closed'
+    device_class: garage_door
+    lambda: |-
+      if (isnan(id(door_distance).state)) return {};
+      return id(door_distance).state >= 0.50f;
+    filters:
+      # Consensus equivalent: require sustained state for 5 s before flipping.
+      # Stacked on the 7-sample median above, no single spurious reading can
+      # move door state — beats OG's cmr=10 majority vote in practice.
+      - delayed_on: 5s
+      - delayed_off: 5s
+
+  # Vehicle present: 50 cm <= distance < 150 cm (OG dth=50, vth=150).
+  # Longer debounce — vehicle movement is slow, no need to report quickly.
+  - platform: template
+    id: vehicle_present
+    name: '${friendly_name} Vehicle Present'
+    device_class: presence
+    lambda: |-
+      float d = id(door_distance).state;
+      if (isnan(d)) return {};
+      return d >= 0.50f && d < 1.50f;
+    filters:
+      - delayed_on: 10s
+      - delayed_off: 10s
+
+  # Case-mounted button on GPIO0 — manual cycle.
+  - platform: gpio
+    pin:
+      number: GPIO0
+      mode: INPUT_PULLUP
+      inverted: true
+    name: '${friendly_name} Button'
+    on_press:
+      then:
+        - cover.toggle: garage_door
+    filters:
+      - delayed_on: 50ms
+
+# Relay (GPIO15) — momentary pulse to fire the opener's button input.
+# Internal: only the cover should drive it.
+switch:
+  - platform: gpio
+    pin: GPIO15
+    id: garage_relay
+    restore_mode: ALWAYS_OFF
+    internal: true
+
+# Template cover wrapping ultrasonic (state) + relay (action).
+# Close is gated by a 5 s warning beep — replicates OG alm=1+aoo=1
+# (UL325-style safety: warn anyone in the bay before remote close).
+# Open and stop fire immediately (no warning needed; opening can't pinch).
+cover:
+  - platform: template
+    name: '${friendly_name}'
+    id: garage_door
+    device_class: garage
+    has_position: false
+    assumed_state: false
+    lambda: |-
+      if (id(door_closed).state) return COVER_CLOSED;
+      return COVER_OPEN;
+    open_action: &pulse
+      - switch.turn_on: garage_relay
+      - delay: 1s             # OG cdt default = 1000 ms
+      - switch.turn_off: garage_relay
+    stop_action: *pulse
+    close_action:
+      - if:
+          # Skip warning if door's already closed — relay would do nothing.
+          condition:
+            binary_sensor.is_off: door_closed
+          then:
+            - script.execute: warn_then_close
+            - script.wait: warn_then_close
+
+# Buzzer (GPIO13) and warning script.
+output:
+  - platform: esp8266_pwm
+    pin: GPIO13
+    id: buzzer_pwm
+
+rtttl:
+  id: buzzer
+  output: buzzer_pwm
+
+script:
+  - id: warn_then_close
+    mode: single   # ignore re-triggers while already running
+    then:
+      # ~5 s warning: 5 short beeps interleaved with rests.
+      # b=120 → quarter (d=4) = 0.5 s; 11 notes × 0.5 s = ~5.5 s.
+      # Tunable — match OG's 5 s alarm window. Pitch c5 = 523 Hz, audible.
+      - rtttl.play: 'warn:d=4,o=5,b=120:c,p,c,p,c,p,c,p,c,p,c'
+      - wait_until:
+          not:
+            rtttl.is_playing:
+      - switch.turn_on: garage_relay
+      - delay: 1s
+      - switch.turn_off: garage_relay

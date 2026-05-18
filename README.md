@@ -8,6 +8,7 @@ ESPHome YAML configs for the devices on my home network, integrated into Home As
 .
 ├── *.yml / *.yaml      # one file per device (kebab-case)
 ├── common/             # reusable packages (wifi.yml, sensor_wifi.yml, sunrise.yml, …)
+├── docs/               # device-specific notes (hardware refs, flash procedures, migration history)
 ├── secrets.yaml        # gitignored — Wi-Fi creds, API keys, OTA passwords
 ├── scripts/            # helper scripts (BLE list, MAC lookup, sunrise validator)
 │   └── hooks/          # versioned git hooks (delegate to hk)
@@ -35,6 +36,10 @@ uv run esphome clean   <config>.yml   # nuke build artifacts for one config
 ```
 
 `clean.sh` and `update.sh` are convenience wrappers for batch operations.
+
+## Documentation
+
+Per-device notes that don't fit in YAML comments — hardware references, FTDI flash procedures, migration history, HA-side housekeeping — live under [`docs/`](docs/README.md).
 
 ## Conventions
 
