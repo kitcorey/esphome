@@ -31,11 +31,11 @@ ESP-12 (ESP8266) on the OpenGarage v2.2 PCB. Pin assignments — see the [v2.2 s
 
 ## Flashing
 
-The v2.2 board has no USB-serial chip — the microUSB port supplies power only. **First flash requires an FTDI adapter** on the 6-pin programming header inside the case. After ESPHome is on, all subsequent updates are OTA (configured in `common/s31_base.yml`).
+The v2.2 board has no USB-serial chip — the microUSB port supplies power only. **First flash requires a USB-UART adapter** (FTDI, CP2102N, etc.) on the 6-pin programming header inside the case. After ESPHome is on, all subsequent updates are OTA (configured in `common/s31_base.yml`).
 
 ### Programming header pinout
 
-| Pin | Net           | FTDI side          |
+| Pin | Net           | USB-UART side      |
 |-----|---------------|--------------------|
 | 1   | ETX (ESP TX)  | RX                 |
 | 2   | VIN (**5V**)  | VCC (5V)           |
@@ -44,17 +44,35 @@ The v2.2 board has no USB-serial chip — the microUSB port supplies power only.
 | 5   | GND           | GND                |
 | 6   | RST           | (unused)           |
 
-- **VIN expects 5V**, not 3.3V — it feeds through diode D1 into the on-board regulator. Set the FTDI jumper to 5V power with 3.3V logic. Wrong voltage will fry the regulator.
-- The case button is wired to GPIO0, so it doubles as the ESP8266 boot button — no separate jumper wire needed to pull GPIO0 low.
+- **VIN expects 5V**, not 3.3V — it feeds through diode D1 into the on-board regulator. Set the adapter to 5V power with 3.3V logic. Wrong voltage will fry the regulator.
+- The case button is wired to GPIO0, so it doubles as the ESP8266 boot button — no separate jumper wire needed to pull GPIO0 low. Hold it while plugging in the adapter, release after ~1 s.
+- CP2102N on macOS is reliable up to 230400 baud; higher speeds (e.g. 460800) produce "Invalid head of packet" mid-transfer. FTDI handles 460800 fine.
+
+### Backing up the stock firmware (one-time)
+
+Before flashing ESPHome, dump the original 4 MB image so a rollback is possible. Wire the adapter per the table above and enter bootloader (hold case button → plug in USB → release after ~1 s), then:
+
+```sh
+uv run esptool --port /dev/cu.usbserial-XXX --baud 230400 read-flash 0x0 0x400000 og-backup-1.bin
+# power-cycle into bootloader again
+uv run esptool --port /dev/cu.usbserial-XXX --baud 230400 read-flash 0x0 0x400000 og-backup-2.bin
+shasum -a 256 og-backup-*.bin
+```
+
+Two reads with matching SHA-256 = known-good image. Optionally `strings og-backup-1.bin | grep <ssid>` to confirm WiFi creds are captured.
+
+**Do not commit the binary** — it contains WiFi password, OG cloud token, and any MQTT/IFTTT creds from `/jc`. Store the deduped, dated file (e.g. `opengarage-og124-stock-2026-05-18.bin`) in 1Password as a document attachment alongside a note recording: chip (ESP8266EX, 4 MB, 26 MHz crystal), MAC, OG firmware version, and date.
+
+To restore later: same wiring, same bootloader entry, then `uv run esptool --port /dev/cu.usbserial-XXX --baud 230400 write-flash 0x0 <backup>.bin`. Whole-flash restore brings the user-data region back too, so the device rejoins WiFi and the OpenGarage HACS integration repolls `/jc` without reconfiguration.
 
 ### Procedure
 
 1. `uv run esphome compile garage-door.yml` to validate.
-2. Snapshot the existing OG firmware config from `http://opengarage.lan.kitcorey.com` — backups of `/jc` and `/jo` are already saved at the repo root as `opengarage-jc-backup.json` / `opengarage-jo-backup.json`.
-3. Unplug microUSB, open the case, wire FTDI per the table (remember to cross TX/RX).
-4. **Hold the case button** while plugging the FTDI's USB end into the laptop, then release after ~1 second. The ESP is now in bootloader mode.
-5. `uv run esphome run garage-door.yml --device /dev/ttyUSBn` (use `ls /dev/ttyUSB*` to find the port).
-6. After upload finishes, unplug FTDI, plug microUSB back in to power-cycle, then `uv run esphome logs garage-door.yml` to confirm the device joined the network.
+2. Snapshot the existing OG firmware config from `http://opengarage.lan.kitcorey.com` — backups of `/jc` and `/jo` are already saved at the repo root as `opengarage-jc-backup.json` / `opengarage-jo-backup.json`. If you also want a full firmware rollback path, do the binary backup above first.
+3. Unplug microUSB, open the case, wire the USB-UART adapter per the table (remember to cross TX/RX).
+4. **Hold the case button** while plugging the adapter's USB end into the laptop, then release after ~1 second. The ESP is now in bootloader mode.
+5. `uv run esphome run garage-door.yml --device /dev/ttyUSBn` (Linux) or `/dev/cu.usbserial-XXX` (macOS).
+6. After upload finishes, unplug the adapter, plug microUSB back in to power-cycle, then `uv run esphome logs garage-door.yml` to confirm the device joined the network.
 7. Reassemble.
 
 If `esptool` times out with "Failed to connect", power-cycle and retry — the bootloader window is finicky and there's no DTR/RTS auto-reset on this board.

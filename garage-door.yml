@@ -24,6 +24,12 @@ packages:
   sensor_wifi: !include common/sensor_wifi.yml
   garage_roam: !include common/garage_wifi_roam.yml
 
+# Merges with common/s31_base.yml — sets the device's friendly_name so
+# entities with `name: None` (e.g. the main cover below) collapse to just
+# the device name in HA instead of "Device Device".
+esphome:
+  friendly_name: '${friendly_name}'
+
 # Merges with common/s31_base.yml (board: from there) to enable persistence
 # for the HA-tunable number entities below.
 esp8266:
@@ -51,7 +57,7 @@ status_led:
 # meters to match the ultrasonic sensor's internal units.
 number:
   - platform: template
-    name: '${friendly_name} Door Threshold'
+    name: 'Door Threshold'
     id: door_threshold_cm
     min_value: 10
     max_value: 300
@@ -65,7 +71,7 @@ number:
     icon: mdi:garage
 
   - platform: template
-    name: '${friendly_name} Vehicle Threshold'
+    name: 'Vehicle Threshold'
     id: vehicle_threshold_cm
     min_value: 10
     max_value: 400
@@ -79,7 +85,7 @@ number:
     icon: mdi:car
 
   - platform: template
-    name: '${friendly_name} Relay Click Time'
+    name: 'Relay Click Time'
     id: relay_click_time_ms
     min_value: 100
     max_value: 2000
@@ -103,7 +109,7 @@ sensor:
     trigger_pin: GPIO12
     echo_pin: GPIO14
     id: door_distance
-    name: '${friendly_name} Distance'
+    name: 'Distance'
     update_interval: 500ms     # matches OG dri
     timeout: 4.0m
     filters:
@@ -139,7 +145,7 @@ binary_sensor:
   # it → door is open. Threshold is HA-tunable via number.door_threshold_cm.
   - platform: template
     id: door_closed
-    name: '${friendly_name} Closed'
+    name: 'Closed'
     device_class: garage_door
     lambda: |-
       if (isnan(id(door_distance).state)) return {};
@@ -156,7 +162,7 @@ binary_sensor:
   # Longer debounce — vehicle movement is slow, no need to report quickly.
   - platform: template
     id: vehicle_present
-    name: '${friendly_name} Vehicle Present'
+    name: 'Vehicle Present'
     device_class: presence
     lambda: |-
       float d = id(door_distance).state;
@@ -174,7 +180,7 @@ binary_sensor:
       number: GPIO0
       mode: INPUT_PULLUP
       inverted: true
-    name: '${friendly_name} Button'
+    name: 'Button'
     on_press:
       then:
         - cover.toggle: garage_door
@@ -203,7 +209,7 @@ switch:
 # transient OPENING/CLOSING state, then IDLE once the door should be settled.
 cover:
   - platform: template
-    name: '${friendly_name}'
+    name: None
     id: garage_door
     device_class: garage
     has_position: false
