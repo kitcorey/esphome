@@ -64,6 +64,7 @@ If `esptool` times out with "Failed to connect", power-cycle and retry — the b
 - **Remove the OpenGarage HACS integration** from Home Assistant. Otherwise it'll keep polling the now-dead `/jc` endpoint and spam errors. The ESPHome native API auto-discovers the new device.
 - Static IP `192.168.20.14` is preserved in the YAML, so DNS / `opengarage.lan.kitcorey.com` keeps resolving and any HA automations referencing that hostname keep working.
 - The config includes `common/garage_wifi_roam.yml`, so the device joins the rest of the garage fleet's roam package on the nanoHD AP and drops off the `kick-client.py` fallback list.
+- After auto-discovery, three new `number.*` config entities show up alongside the cover (`door_threshold_cm`, `vehicle_threshold_cm`, `relay_click_time_ms`) — initial values match the OG defaults so no immediate tuning is needed. The cover entity now reports `current_operation` (OPENING/CLOSING/IDLE).
 
 ## Sensor design
 
@@ -74,10 +75,13 @@ The HC-SR04 can produce spurious echoes — OpenGarage's firmware suppresses the
 
 The two layers stack: no single bad reading can move state, and a burst of bad readings has to survive both the median window and the debounce. See the inline comments in `garage-door.yml` for the tuning ladder if false positives reappear (widen the median window first, then lengthen the debounce).
 
-Close commands fire a **~5-second warning beep** before pulsing the relay (`rtttl` driving the GPIO13 buzzer). This replicates OG's `alm=1`/`aoo=1` UL325-style safety behavior — anyone in the bay gets audible warning before the door starts moving. Open and stop fire immediately, since opening can't pinch.
+The door/vehicle thresholds and the relay click time are exposed as HA `number` entities (`door_threshold_cm` default 50, `vehicle_threshold_cm` default 150, `relay_click_time_ms` default 1000) — persisted to flash via `restore_from_flash`, so tuning is a slider in HA, not a re-flash. A `delta: 0.01` filter on the ultrasonic sensor suppresses idle chatter to HA; the 1 cm dead-zone is far below the 50/150 cm thresholds so it doesn't affect state evaluation in practice.
+
+Close commands fire a **~5-second warning beep** before pulsing the relay (`rtttl` driving the GPIO13 buzzer). This replicates OG's `alm=1`/`aoo=1` UL325-style safety behavior — anyone in the bay gets audible warning before the door starts moving. Open and stop fire immediately, since opening can't pinch. The cover publishes `current_operation` (OPENING/CLOSING/IDLE) around each action so HA shows the in-flight state.
 
 ## References
 
 - [OpenGarage hardware repo](https://github.com/OpenGarage/OpenGarage-Hardware) — schematics for every revision (1.0, 1.1, 1.4, 2.0, 2.2, 2.3+).
 - [OpenGarage firmware repo](https://github.com/OpenGarage/OpenGarage-Firmware) — the stock firmware we're migrating away from; useful for cross-referencing pin assignments, default thresholds (`dth=50`, `vth=150`, `dri=500`, `cmr=10`, etc.), and `/jc` JSON field meanings.
 - [OpenGarage user manual](https://opengarage.github.io/OpenGarage-Firmware/1.2.4/manual/) — describes the original behavior we're matching.
+- [gabe565/esphome-configs (opengarage/)](https://github.com/gabe565/esphome-configs/tree/main/opengarage) — another OG ESPHome config for the same hardware; source of several patterns in `garage-door.yml` (HA-tunable `number` thresholds, `status_led`, `current_operation` transitions, `delta` filter, self-pulsing relay, `play_rtttl` service). See the in-file header for borrowed-vs-diverged notes.
