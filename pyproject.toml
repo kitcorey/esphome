@@ -12,3 +12,7 @@ dependencies = [
     "platformio>=6.1.18",
     "pyyaml>=6.0.3",
 ]
+
+[tool.ruff]
+line-length = 120
+target-version = "py313"

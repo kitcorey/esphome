@@ -1,0 +1,5 @@
+[default]
+extend-ignore-re = [
+  # MAC addresses — hex bytes separated by colons, often appear in comments
+  "(?i)\\b(?:[0-9a-f]{2}:){2,}[0-9a-f]{2}\\b",
+]

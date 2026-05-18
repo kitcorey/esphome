@@ -46,7 +46,7 @@ private:
         else
         {
             initialized = true;
-            ESP_LOGI("sensor", "Succesfully initialized AQI");
+            ESP_LOGI("sensor", "Successfully initialized AQI");
         }
     }
 

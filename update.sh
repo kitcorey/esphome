@@ -10,6 +10,6 @@ docker run --rm \
  --workdir /config \
  -e PLATFORMIO_CORE_DIR=/.cache/.plattformio \
  -e PLATFORMIO_GLOBALLIB_DIR=/.cache/.plattformioLibs \
- -u $(id -u ${USER}):$(id -g ${USER}) \
+ -u "$(id -u "${USER}")":"$(id -g "${USER}")" \
  -it ghcr.io/esphome/esphome:latest run ble_tracker.yml
 

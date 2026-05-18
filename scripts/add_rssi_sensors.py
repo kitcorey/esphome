@@ -52,16 +52,14 @@ def generate_rssi_sensors(devices: list[dict], existing_macs: set[str], prefix: 
         name = device["name"]
         if name.endswith(" BLE"):
             name = name[:-4]
-        lines.append(f"  - platform: ble_rssi")
+        lines.append("  - platform: ble_rssi")
         lines.append(f'    mac_address: "{mac}"')
         lines.append(f'    name: "{prefix}{name} RSSI"')
     return "\n".join(lines)
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Add BLE RSSI sensors to an ESPHome YAML config"
-    )
+    parser = argparse.ArgumentParser(description="Add BLE RSSI sensors to an ESPHome YAML config")
     parser.add_argument("yaml_file", type=Path, help="ESPHome YAML config file to modify")
     parser.add_argument(
         "--prefix",

@@ -4,6 +4,9 @@ uv = "latest"
 gitleaks = "latest"
 hk = "1.45"
 pkl = "0.31"
+ruff = "latest"
+shellcheck = "latest"
+typos = "latest"
 yamllint = "latest"
 
 [env]

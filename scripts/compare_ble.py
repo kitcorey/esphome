@@ -109,7 +109,7 @@ def get_rssi_entities(url, headers):
         for entity_prefix, sensor_prefix, board_label, _ in ordered:
             full = f"sensor.{entity_prefix}_{sensor_prefix}"
             if eid.startswith(full):
-                device = eid[len(full):].replace("_rssi", "").upper()
+                device = eid[len(full) :].replace("_rssi", "").upper()
                 entities.setdefault(device, {})[board_label] = eid
                 break
     return entities
@@ -119,9 +119,7 @@ def get_history(url, headers, entity_id, hours):
     """Fetch sensor history for the given time window."""
     start = (datetime.now(timezone.utc) - timedelta(hours=hours)).isoformat()
     params = {"filter_entity_id": entity_id, "minimal_response": "", "no_attributes": ""}
-    resp = requests.get(
-        f"{url}/api/history/period/{start}", headers=headers, params=params, timeout=30
-    )
+    resp = requests.get(f"{url}/api/history/period/{start}", headers=headers, params=params, timeout=30)
     resp.raise_for_status()
     data = resp.json()
     if not data or not data[0]:
@@ -166,8 +164,7 @@ def print_compact(entities, all_data, hours):
 
     print(f"\nBLE RSSI Comparison (last {hours}h)")
     print("=" * 88)
-    print(f"{'Device':<22} {short_labels[0]:>8} {short_labels[1]:>8} "
-          f"{'Diff':>6} {'Readings':>10}  Winner")
+    print(f"{'Device':<22} {short_labels[0]:>8} {short_labels[1]:>8} {'Diff':>6} {'Readings':>10}  Winner")
     print("-" * 88)
 
     no_data_devices = []
@@ -228,12 +225,14 @@ def print_compact(entities, all_data, hours):
         overall = f"{short_labels[0]} by {avg_diff:+.1f} dB avg"
     else:
         overall = "essentially tied"
-    print(f"Summary: {short_labels[0]} wins {wins[short_labels[0]]}, "
-          f"{short_labels[1]} wins {wins[short_labels[1]]}, "
-          f"ties {wins['tie']} -> {overall}")
+    print(
+        f"Summary: {short_labels[0]} wins {wins[short_labels[0]]}, "
+        f"{short_labels[1]} wins {wins[short_labels[1]]}, "
+        f"ties {wins['tie']} -> {overall}"
+    )
 
     if no_data_devices:
-        names = ', '.join(format_device_name(d) for d in no_data_devices[:3])
+        names = ", ".join(format_device_name(d) for d in no_data_devices[:3])
         suffix = ", ..." if len(no_data_devices) > 3 else ""
         print(f"({len(no_data_devices)} device(s) with no data: {names}{suffix})")
 

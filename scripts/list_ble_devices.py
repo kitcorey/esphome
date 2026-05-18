@@ -23,12 +23,12 @@ DEFAULT_CONFIG_DIR = "/home/kit/docker/homeassistant/config"
 
 # Patterns that identify ESPHome BLE sensor entities
 ESPHOME_BLE_PATTERNS = [
-    r"lywsd",      # Xiaomi LYWSD02/LYWSD03 sensors
-    r"ble_rssi",   # BLE RSSI sensors
-    r"xiaomi",     # Other Xiaomi sensors
-    r"bthome",     # BTHome devices
-    r"pvvx",       # PVVX firmware sensors
-    r"atc",        # ATC firmware sensors
+    r"lywsd",  # Xiaomi LYWSD02/LYWSD03 sensors
+    r"ble_rssi",  # BLE RSSI sensors
+    r"xiaomi",  # Other Xiaomi sensors
+    r"bthome",  # BTHome devices
+    r"pvvx",  # PVVX firmware sensors
+    r"atc",  # ATC firmware sensors
 ]
 
 
@@ -73,13 +73,15 @@ def get_native_ble_devices(device_registry: dict, ignored_entries: set) -> list:
         # Use user-assigned name if available
         name = device.get("name_by_user") or device.get("name") or "Unknown"
 
-        devices.append({
-            "name": name,
-            "manufacturer": device.get("manufacturer") or "Unknown",
-            "model": device.get("model") or "Unknown",
-            "mac": mac,
-            "device_id": device.get("id"),
-        })
+        devices.append(
+            {
+                "name": name,
+                "manufacturer": device.get("manufacturer") or "Unknown",
+                "model": device.get("model") or "Unknown",
+                "mac": mac,
+                "device_id": device.get("id"),
+            }
+        )
 
     return sorted(devices, key=lambda d: d["name"].lower())
 
@@ -114,12 +116,14 @@ def get_esphome_ble_entities(entity_registry: dict, device_registry: dict) -> li
 
         name = entity.get("original_name") or entity.get("name") or entity_id
 
-        entities.append({
-            "entity_id": entity_id,
-            "name": name,
-            "proxy_device": proxy,
-            "unique_id": entity.get("unique_id"),
-        })
+        entities.append(
+            {
+                "entity_id": entity_id,
+                "name": name,
+                "proxy_device": proxy,
+                "unique_id": entity.get("unique_id"),
+            }
+        )
 
     return sorted(entities, key=lambda e: e["entity_id"])
 
@@ -139,7 +143,7 @@ def format_table(devices: list, entities: list) -> str:
         model_w = max(len(d["model"]) for d in devices)
 
         name_w = max(name_w, 4)  # "Name"
-        mfr_w = max(mfr_w, 12)   # "Manufacturer"
+        mfr_w = max(mfr_w, 12)  # "Manufacturer"
         model_w = max(model_w, 5)  # "Model"
 
         header = f"{'Name':<{name_w}}  {'Manufacturer':<{mfr_w}}  {'Model':<{model_w}}  MAC"
@@ -161,7 +165,7 @@ def format_table(devices: list, entities: list) -> str:
         eid_w = max(len(e["entity_id"]) for e in entities)
         name_w = max(len(e["name"]) for e in entities)
 
-        eid_w = max(eid_w, 9)   # "Entity ID"
+        eid_w = max(eid_w, 9)  # "Entity ID"
         name_w = max(name_w, 4)  # "Name"
 
         header = f"{'Entity ID':<{eid_w}}  {'Name':<{name_w}}  Proxy Device"
@@ -178,16 +182,17 @@ def format_table(devices: list, entities: list) -> str:
 
 def format_json(devices: list, entities: list) -> str:
     """Format output as JSON."""
-    return json.dumps({
-        "native_ble_devices": devices,
-        "esphome_ble_entities": entities,
-    }, indent=2)
+    return json.dumps(
+        {
+            "native_ble_devices": devices,
+            "esphome_ble_entities": entities,
+        },
+        indent=2,
+    )
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="List all BLE devices and entities actively used in Home Assistant"
-    )
+    parser = argparse.ArgumentParser(description="List all BLE devices and entities actively used in Home Assistant")
     parser.add_argument(
         "--config-dir",
         type=Path,

@@ -58,9 +58,7 @@ FINAL_COLD_WHITE_MIN = 0.6
 BRIGHTNESS_BACKSLIDE_TOLERANCE = 0.005
 SUNRISE_DONE_BRIGHTNESS = 0.99
 SUNRISE_DONE_COLD_WHITE = 0.95
-EXPECTED_WARNING = re.compile(
-    r"\b(Brightness|White) value (1\.0[0-9]|0\.99[5-9]) is out of range\b"
-)
+EXPECTED_WARNING = re.compile(r"\b(Brightness|White) value (1\.0[0-9]|0\.99[5-9]) is out of range\b")
 
 
 @dataclass(frozen=True)
@@ -389,9 +387,8 @@ def check_first_sample_dim_red(samples: list[Sample], _logs, _duration) -> Check
         problems.append(f"red={s.red:.3f} < 0.95")
     if s.blue > 0.02:
         problems.append(f"blue={s.blue:.3f} > 0.02")
-    detail = (
-        f"first sample t={s.t:.2f}s bri={s.brightness:.3f} green={s.green:.3f} ct={s.color_temperature:.1f}"
-        + (f"; problems: {', '.join(problems)}" if problems else "")
+    detail = f"first sample t={s.t:.2f}s bri={s.brightness:.3f} green={s.green:.3f} ct={s.color_temperature:.1f}" + (
+        f"; problems: {', '.join(problems)}" if problems else ""
     )
     return CheckResult("first_sample_dim_red", not problems, detail)
 
@@ -432,8 +429,7 @@ def check_brightness_reaches_max(samples: list[Sample], _logs, _duration) -> Che
 
 def check_phase1_to_2_boundary_seen(samples: list[Sample], _logs, _duration) -> CheckResult:
     matches = [
-        s for s in samples
-        if PHASE2_GREEN_RANGE[0] <= s.green <= PHASE2_GREEN_RANGE[1] and s.blue <= PHASE2_BLUE_MAX
+        s for s in samples if PHASE2_GREEN_RANGE[0] <= s.green <= PHASE2_GREEN_RANGE[1] and s.blue <= PHASE2_BLUE_MAX
     ]
     return CheckResult(
         "phase1_to_2_boundary_seen",
@@ -444,7 +440,8 @@ def check_phase1_to_2_boundary_seen(samples: list[Sample], _logs, _duration) -> 
 
 def check_phase2_to_3_boundary_seen(samples: list[Sample], _logs, _duration) -> CheckResult:
     matches = [
-        s for s in samples
+        s
+        for s in samples
         if PHASE3_GREEN_RANGE[0] <= s.green <= PHASE3_GREEN_RANGE[1]
         and PHASE3_BLUE_RANGE[0] <= s.blue <= PHASE3_BLUE_RANGE[1]
     ]
@@ -475,7 +472,7 @@ def check_final_state_warm_white(samples: list[Sample], _logs, _duration) -> Che
 
 
 def check_no_error_logs(_samples, logs: list[LogEntry], _duration) -> CheckResult:
-    errors = [l for l in logs if l.level == int(LogLevel.LOG_LEVEL_ERROR)]
+    errors = [entry for entry in logs if entry.level == int(LogLevel.LOG_LEVEL_ERROR)]
     sample = errors[0].message if errors else ""
     return CheckResult(
         "no_error_logs",
@@ -485,8 +482,8 @@ def check_no_error_logs(_samples, logs: list[LogEntry], _duration) -> CheckResul
 
 
 def check_no_unexpected_warnings(_samples, logs: list[LogEntry], _duration) -> CheckResult:
-    warns = [l for l in logs if l.level == int(LogLevel.LOG_LEVEL_WARN)]
-    unexpected = [l for l in warns if not EXPECTED_WARNING.search(l.message)]
+    warns = [entry for entry in logs if entry.level == int(LogLevel.LOG_LEVEL_WARN)]
+    unexpected = [entry for entry in warns if not EXPECTED_WARNING.search(entry.message)]
     sample = unexpected[0].message if unexpected else ""
     return CheckResult(
         "no_unexpected_warnings",
@@ -522,6 +519,7 @@ def run_checks(samples: list[Sample], logs: list[LogEntry], duration: int) -> li
 
 # --- I/O --------------------------------------------------------------------
 
+
 def write_samples(outcome: ValidationOutcome, cfg: Config, args: argparse.Namespace, path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w") as f:
@@ -535,8 +533,8 @@ def write_samples(outcome: ValidationOutcome, cfg: Config, args: argparse.Namesp
         f.write(json.dumps(meta) + "\n")
         for s in outcome.samples:
             f.write(json.dumps({"type": "sample", **asdict(s)}) + "\n")
-        for l in outcome.logs:
-            f.write(json.dumps({"type": "log", **asdict(l)}) + "\n")
+        for entry in outcome.logs:
+            f.write(json.dumps({"type": "log", **asdict(entry)}) + "\n")
     print(f"[output] wrote {len(outcome.samples)} samples + {len(outcome.logs)} log lines to {path}", flush=True)
 
 

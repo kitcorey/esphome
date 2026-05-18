@@ -2,36 +2,55 @@ amends "package://github.com/jdx/hk/releases/download/v1.45.0/hk@1.45.0#/Config.
 import "package://github.com/jdx/hk/releases/download/v1.45.0/hk@1.45.0#/Builtins.pkl"
 
 local gitleaksStaged: Step = new Step {
-    check = "mise exec -- gitleaks git --pre-commit --staged --redact --verbose"
+  check = "mise exec -- gitleaks git --pre-commit --staged --redact --verbose"
 }
 
 local gitleaksHistory: Step = new Step {
-    check = "mise exec -- gitleaks git --redact --verbose"
+  check = "mise exec -- gitleaks git --redact --verbose"
 }
 
 local yamllintCheck: Step = Builtins.yamllint
 
 local yamllintAll: Step = new Step {
-    check = "mise exec -- yamllint --strict ."
+  check = "mise exec -- yamllint --strict ."
 }
 
+local ruffCheck: Step = Builtins.ruff
+local ruffFormat: Step = Builtins.ruff_format
+local shellcheckStep: Step = Builtins.shellcheck
+local pklFormatStep: Step = Builtins.pkl_format
+local typosStep: Step = Builtins.typos
+local mergeConflict: Step = Builtins.check_merge_conflict
+
 hooks {
-    ["pre-commit"] {
-        stash = "git"
-        steps {
-            ["gitleaks-staged"] = gitleaksStaged
-            ["yamllint"] = yamllintCheck
-        }
+  ["pre-commit"] {
+    stash = "git"
+    steps {
+      ["gitleaks-staged"] = gitleaksStaged
+      ["merge-conflict"] = mergeConflict
+      ["yamllint"] = yamllintCheck
+      ["ruff"] = ruffCheck
+      ["ruff-format"] = ruffFormat
+      ["shellcheck"] = shellcheckStep
+      ["pkl-format"] = pklFormatStep
+      ["typos"] = typosStep
     }
-    ["pre-push"] {
-        steps {
-            ["gitleaks-history"] = gitleaksHistory
-        }
+  }
+  ["pre-push"] {
+    steps {
+      ["gitleaks-history"] = gitleaksHistory
     }
-    ["check"] {
-        steps {
-            ["gitleaks-history"] = gitleaksHistory
-            ["yamllint"] = yamllintAll
-        }
+  }
+  ["check"] {
+    steps {
+      ["gitleaks-history"] = gitleaksHistory
+      ["merge-conflict"] = mergeConflict
+      ["yamllint"] = yamllintAll
+      ["ruff"] = ruffCheck
+      ["ruff-format"] = ruffFormat
+      ["shellcheck"] = shellcheckStep
+      ["pkl-format"] = pklFormatStep
+      ["typos"] = typosStep
     }
+  }
 }
