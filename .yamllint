@@ -35,3 +35,5 @@ ignore: |
   __pycache__/
   secrets.yaml
   common/secrets.yaml
+  airgradient-one.yml
+  airgradient-open-air-o-1pst.yml

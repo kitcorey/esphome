@@ -19,5 +19,5 @@ opengarage-*-backup.json
 opengarage-flash-backup-*.bin
 
 # These symlinked from another repo
-airgradient-one.yaml
-airgradient-open-air-o-1pst.yaml
+airgradient-one.yml
+airgradient-open-air-o-1pst.yml
