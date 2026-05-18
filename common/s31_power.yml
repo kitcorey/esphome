@@ -56,6 +56,7 @@ light:
     name: "Blue LED"
     output: pow_blue_led
     id: led
+    internal: true
 
 sensor:
   - platform: uptime
