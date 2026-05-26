@@ -113,29 +113,30 @@ sensor:
     update_interval: 500ms     # matches OG dri
     timeout: 4.0m
     filters:
-      # 7-sample rolling median = 3.5 s window; immune to up to 3 outliers.
+      # 15-sample rolling median = 7.5 s window; immune to up to 7 outliers.
       # Push every reading (send_every: 1) for fastest state propagation.
       # delta: drops readings <1 cm from the last published value, cutting
       # idle chatter to HA. Lambdas read .state (the last published value),
       # but thresholds are coarse enough (50/150 cm) that the dead-zone
       # doesn't matter for on-device state evaluation.
       #
+      # Was 7 + 5 s; bumped to 15 + 10 s after a multi-second burst of low
+      # readings (2026-05-22) outvoted the 7-sample median and fired the
+      # away-alert. ~17 s worst-case HA-visible lag now.
+      #
       # If false positives reappear, tune in this order (slower but stronger):
       #   1. Widen median window_size — tolerates floor(N/2) outliers per
       #      window, but lags real transitions by ~N/2 samples (500 ms each).
-      #        11 → 5 outliers, 5.5 s window
-      #        15 → 7 outliers, 7.5 s window
       #        21 → 10 outliers, 10.5 s window
+      #        31 → 15 outliers, 15.5 s window
       #   2. Lengthen delayed_on/off on door_closed and vehicle_present
       #      below — each added second is a second of HA-visible lag, but
       #      requires sustained classification before flipping state.
       #   3. (Rare) stack a sliding_window_moving_average after the median
       #      if clusters of bad samples slip through.
-      # Scale value + state layers together rather than maxing one. First
-      # preset to try if 7 + 5 s isn't enough: window_size 15 + delayed_on/
-      # off 10 s → ~17 s worst-case lag, bulletproof against typical bursts.
+      # Scale value + state layers together rather than maxing one.
       - median:
-          window_size: 7
+          window_size: 15
           send_every: 1
       - delta: 0.01
 
@@ -151,11 +152,11 @@ binary_sensor:
       if (isnan(id(door_distance).state)) return {};
       return id(door_distance).state >= id(door_threshold_cm).state / 100.0f;
     filters:
-      # Consensus equivalent: require sustained state for 5 s before flipping.
-      # Stacked on the 7-sample median above, no single spurious reading can
-      # move door state — beats OG's cmr=10 majority vote in practice.
-      - delayed_on: 5s
-      - delayed_off: 5s
+      # Require sustained state for 10 s before flipping. Stacked on the
+      # 15-sample median above, sustained bad-sample bursts up to ~7 s plus
+      # 10 s of debounce are needed before a false flip can land.
+      - delayed_on: 10s
+      - delayed_off: 10s
 
   # Vehicle present: door_threshold_cm <= distance < vehicle_threshold_cm
   # (defaults 50 / 150, OG dth=50, vth=150).
