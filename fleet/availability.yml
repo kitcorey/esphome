@@ -1,0 +1,32 @@
+---
+# Fleet availability manifest, consumed by .claude/skills/esphome-fleet-update.
+#
+# Keys match the YAML basename (e.g. `outdoor-christmas-lights` for
+# `outdoor-christmas-lights.yml`) — same identifier inventory.py uses for
+# device matching.
+#
+# Status values:
+#   active   — always eligible (default if a device isn't listed)
+#   seasonal — eligible only when current month ∈ active_months
+#   offline  — never eligible (long-term stored); reason from `note`
+#   broken   — never eligible (needs hardware repair); reason from `note`
+#
+# The fleet-update skill reads this file but never writes to it. Edit by hand.
+
+outdoor-christmas-lights:
+  status: seasonal
+  active_months: [11, 12, 1]
+  note: "Up early Nov through early Jan"
+
+ir-transmitter:
+  status: seasonal
+  active_months: [11, 12, 1]
+  note: "Up early Nov through early Jan"
+
+space-heater:
+  status: seasonal
+  active_months: [10, 11, 12, 1, 2, 3]
+
+office-desk-heater:
+  status: seasonal
+  active_months: [10, 11, 12, 1, 2, 3]
