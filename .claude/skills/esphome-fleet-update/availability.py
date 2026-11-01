@@ -65,6 +65,29 @@ def next_active_date(today: dt.date, active_months: list[int]) -> dt.date | None
     return None
 
 
+def parse_mmdd(value: str) -> tuple[int, int]:
+    """Parse an "MM-DD" string into (month, day)."""
+    month, day = (int(part) for part in str(value).split("-"))
+    dt.date(2000, month, day)  # validate (2000 is a leap year, so 02-29 passes)
+    return month, day
+
+
+def in_window(today: dt.date, start: tuple[int, int], end: tuple[int, int]) -> bool:
+    """True if today falls in the inclusive [start, end] window; wraps the year when start > end."""
+    t = (today.month, today.day)
+    if start <= end:
+        return start <= t <= end
+    return t >= start or t <= end
+
+
+def next_window_start(today: dt.date, start: tuple[int, int]) -> dt.date:
+    """Next occurrence of start on or after today."""
+    candidate = dt.date(today.year, *start)
+    if candidate < today:
+        candidate = dt.date(today.year + 1, *start)
+    return candidate
+
+
 def classify(yaml_arg: str, manifest: dict, today: dt.date) -> dict:
     key = yaml_key(yaml_arg)
     entry = manifest.get(key)
@@ -80,12 +103,27 @@ def classify(yaml_arg: str, manifest: dict, today: dt.date) -> dict:
         return {**base, "status": "eligible", "reason": "active"}
 
     if status == "seasonal":
-        active = entry.get("active_months", []) or []
-        if today.month in active:
-            return {**base, "status": "eligible", "reason": "seasonal — in season"}
-        nxt = next_active_date(today, active)
-        if nxt is None:
-            return {**base, "status": "skipped", "reason": "seasonal — no active months configured"}
+        if "active_from" in entry or "active_until" in entry:
+            try:
+                start = parse_mmdd(entry["active_from"])
+                end = parse_mmdd(entry["active_until"])
+            except (KeyError, ValueError):
+                return {
+                    **base,
+                    "status": "skipped",
+                    "skip_kind": "unknown",
+                    "reason": "seasonal — active_from/active_until must both be set as MM-DD",
+                }
+            if in_window(today, start, end):
+                return {**base, "status": "eligible", "reason": "seasonal — in season"}
+            nxt = next_window_start(today, start)
+        else:
+            active = entry.get("active_months", []) or []
+            if today.month in active:
+                return {**base, "status": "eligible", "reason": "seasonal — in season"}
+            nxt = next_active_date(today, active)
+            if nxt is None:
+                return {**base, "status": "skipped", "reason": "seasonal — no active months configured"}
         days = (nxt - today).days
         reason = f"seasonal — next active {MONTH_NAMES[nxt.month]} ({nxt.isoformat()}, in {days} days)"
         return {

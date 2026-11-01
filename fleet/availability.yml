@@ -7,7 +7,9 @@
 #
 # Status values:
 #   active   — always eligible (default if a device isn't listed)
-#   seasonal — eligible only when current month ∈ active_months
+#   seasonal — eligible only when current month ∈ active_months, or (for
+#              day-level precision) today falls in the inclusive
+#              active_from..active_until window ("MM-DD", wraps the year)
 #   offline  — never eligible (long-term stored); reason from `note`
 #   broken   — never eligible (needs hardware repair); reason from `note`
 #
@@ -15,13 +17,15 @@
 
 outdoor-christmas-lights:
   status: seasonal
-  active_months: [11, 12, 1]
-  note: "Up early Nov through early Jan"
+  active_from: "11-15"
+  active_until: "01-31"
+  note: "Up mid-Nov through early Jan"
 
 ir-transmitter:
   status: seasonal
-  active_months: [11, 12, 1]
-  note: "Up early Nov through early Jan"
+  active_from: "11-15"
+  active_until: "01-31"
+  note: "Up mid-Nov through early Jan"
 
 space-heater:
   status: seasonal
