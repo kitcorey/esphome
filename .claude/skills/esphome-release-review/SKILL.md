@@ -126,7 +126,7 @@ Inline the link on the *first* mention of each feature in the report. Subsequent
 3. <recompile + OTA order, lowest-risk first>
 4. <vendor-managed items, separate channel>
 
-> Once the YAML edits are in, run `/esphome-fleet-update` to recompile and OTA-flash the affected devices with seasonal/availability filtering and per-device confirmation.
+> Once the YAML edits are in, run `/esphome-fleet-update` to recompile and OTA-flash the affected devices with seasonal/availability filtering, one approval up front, and a prompt for each critical device.
 ```
 
 ## Gotchas

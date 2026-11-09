@@ -72,7 +72,7 @@ Keep it tight (~150–250 words). Lead with the ⚠ flags, not the table:
 This skill is read-only. After presenting, offer the write-side siblings as appropriate:
 
 - **`/esphome-release-review`** — compare the fleet against an upstream release / changelog (the upstream-version question this skill deliberately doesn't answer).
-- **`/esphome-fleet-update`** — recompile and OTA-flash devices, with seasonal/availability filtering and per-device confirmation.
+- **`/esphome-fleet-update`** — recompile and OTA-flash devices, with seasonal/availability filtering, one approval up front, and a prompt for each critical device.
 
 Don't fetch changelogs, edit YAML, or write the manifest from this skill — those belong to the siblings or a manual edit.
 

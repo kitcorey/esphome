@@ -13,7 +13,20 @@
 #   offline  — never eligible (long-term stored); reason from `note`
 #   broken   — never eligible (needs hardware repair); reason from `note`
 #
+# Optional field:
+#   critical: true — flashed last, and only after its own y/skip prompt. An
+#                    entry with no `status` is still `active`.
+#
 # The fleet-update skill reads this file but never writes to it. Edit by hand.
+
+garage-door:
+  critical: true
+
+bedroom-headboard:
+  critical: true
+
+mahtanar-heatpump:
+  critical: true
 
 outdoor-christmas-lights:
   status: seasonal
