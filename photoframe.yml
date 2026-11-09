@@ -1,0 +1,373 @@
+---
+# Seeed reTerminal E1004 (13.3" Spectra 6, 1200x1600) photo frame.
+#
+# The frame wakes on a schedule, downloads one pre-dithered PNG from
+# esp32-photoframe-server (~/docker/photoframe-server), paints it, and deep
+# sleeps until the next slot. The server does all image processing; the PNG
+# uses only the six pure panel colors, which the epaper_spi Spectra mapping
+# reproduces exactly. See docs/reterminal-e1004-photoframe.md.
+#
+# Wake reasons:
+#   timer          fetch a new image, then sleep until the next slot
+#   left / right   same as timer (both just mean "show another photo"; the
+#                  server picks at random, so there is no "previous")
+#   refresh        stay awake ${awake_minutes} min for OTA / logs / HA, no
+#                  new image; left/right still fetch while awake
+#   power-on/reset fetch a new image and stay awake (e.g. after flashing)
+#
+# Unverified on hardware until the first USB flash: flash size, button GPIOs
+# (Seeed and the ESPHome sample config disagree), PSRAM mode.
+
+substitutions:
+  name: 'photoframe'
+  friendly_name: 'Photo Frame'
+  static_ip: '192.168.20.59'
+  # The frame is asleep most of the time; never reboot over missing Wi-Fi.
+  reboot_timeout: 0s
+  awake_minutes: '10'
+  image_url: 'http://photoframe-server.lan.kitcorey.com:9607/image'
+
+esp32:
+  variant: esp32s3
+  # The chip is 32 MB per Seeed (confirm with `esptool flash-id` before the
+  # first flash), but ESPHome only supports OTA on 32 MB with experimental
+  # IDF features enabled. 16 MB is safe on a 32 MB chip and plenty here.
+  flash_size: 16MB
+  framework:
+    type: esp-idf
+
+psram:
+  mode: octal
+  speed: 80MHz
+
+packages:
+  wifi: !include common/wifi.yml
+  sensor_wifi: !include common/sensor_wifi.yml
+
+esphome:
+  name: "${name}"
+  friendly_name: "${friendly_name}"
+  on_boot:
+    # Release the pad holds latched before the last deep sleep, before any
+    # component reconfigures these pins.
+    - priority: 1000
+      then:
+        - lambda: |-
+            for (gpio_num_t pin : {GPIO_NUM_12, GPIO_NUM_16, GPIO_NUM_21, GPIO_NUM_48}) {
+              gpio_hold_dis(pin);
+            }
+            gpio_deep_sleep_hold_dis();
+    # I2C is up: set the system clock from the RTC.
+    - priority: 600
+      then:
+        - pcf8563.read_time: rtc
+    # Everything is set up: decide what this wake is for.
+    - priority: -100
+      then:
+        - script.execute: handle_wake
+  on_shutdown:
+    # Runs after every component's on_safe_shutdown (the panel's own sleep
+    # command), right before deep sleep. Cut panel, SD and battery-divider
+    # power and latch the pins low so they don't float while asleep.
+    # Mirrors esp32-photoframe's board_hal_prepare_for_sleep().
+    - then:
+        - lambda: |-
+            for (gpio_num_t pin : {GPIO_NUM_12, GPIO_NUM_16, GPIO_NUM_21, GPIO_NUM_48}) {
+              gpio_set_direction(pin, GPIO_MODE_OUTPUT);
+              gpio_set_level(pin, 0);
+              gpio_hold_en(pin);
+            }
+            gpio_deep_sleep_hold_en();
+
+logger:
+  level: DEBUG
+  hardware_uart: UART0
+
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+globals:
+  - id: stay_awake
+    type: bool
+    initial_value: 'false'
+
+# --- Time ------------------------------------------------------------------
+# Home Assistant is the time source, like the rest of the fleet. Every sync is
+# copied into the PCF8563, and the RTC sets the clock at boot, so scheduled
+# wakes can compute the next slot without waiting for the API connection.
+i2c:
+  sda: GPIO19
+  scl: GPIO20
+
+time:
+  - platform: pcf8563
+    id: rtc
+    address: 0x51
+    timezone: America/Denver
+    update_interval: never
+  - platform: homeassistant
+    id: homeassistant_time
+    on_time_sync:
+      - pcf8563.write_time: rtc
+
+# --- Image -----------------------------------------------------------------
+http_request:
+  # The server renders on demand (2-7 s observed) and sends a ~2 KB
+  # X-Config-Payload header meant for esp32-photoframe; the 512 B default
+  # receive buffer can't parse a header line that long.
+  timeout: 30s
+  buffer_size_rx: 4096
+
+image:
+  - platform: online_image
+    id: photo
+    url: "${image_url}"
+    format: PNG
+    type: RGB565
+    request_headers:
+      Authorization: !secret photoframe_server_auth
+      X-Battery-Percentage: !lambda |-
+        return std::isnan(id(battery_level).state)
+            ? std::string("") : to_string((int) id(battery_level).state);
+    on_download_finished:
+      - lvgl.image.update:
+          id: lv_photo
+          src: photo
+      - lvgl.resume:
+      - logger.log: "Image downloaded, refreshing panel"
+      - script.execute: finish_wake
+    on_error:
+      - logger.log:
+          level: WARN
+          format: "Image download failed"
+      - script.execute: finish_wake
+
+# --- Display ---------------------------------------------------------------
+spi:
+  clk_pin: GPIO7
+  mosi_pin: GPIO9
+  miso_pin: GPIO8
+
+display:
+  - platform: epaper_spi
+    model: Seeed-reTerminal-E1004
+    id: epaper
+
+# Drawing a full-size online_image directly in a display lambda hangs on this
+# panel (esphome/esphome#18797); render through an LVGL image widget instead.
+lvgl:
+  update_when_display_idle: true
+  paused: true
+  buffer_size: 25%
+  widgets:
+    - image:
+        id: lv_photo
+        src: photo
+
+# --- Battery ---------------------------------------------------------------
+switch:
+  - platform: gpio
+    id: battery_divider
+    pin: GPIO21
+    restore_mode: ALWAYS_OFF
+
+sensor:
+  - platform: adc
+    pin: GPIO1
+    id: battery_voltage
+    name: "Battery Voltage"
+    attenuation: 12db
+    update_interval: never
+    accuracy_decimals: 2
+    filters:
+      - multiply: 2.0
+  - platform: copy
+    source_id: battery_voltage
+    id: battery_level
+    name: "Battery"
+    device_class: battery
+    unit_of_measurement: "%"
+    accuracy_decimals: 0
+    filters:
+      - calibrate_linear:
+          - 4.15 -> 100.0
+          - 3.96 -> 90.0
+          - 3.91 -> 80.0
+          - 3.85 -> 70.0
+          - 3.80 -> 60.0
+          - 3.75 -> 50.0
+          - 3.68 -> 40.0
+          - 3.58 -> 30.0
+          - 3.49 -> 20.0
+          - 3.41 -> 10.0
+          - 3.30 -> 5.0
+          - 3.27 -> 0.0
+      - clamp:
+          min_value: 0
+          max_value: 100
+
+# --- Buttons ---------------------------------------------------------------
+# Active low. Each press is logged so the GPIO-to-button mapping can be
+# confirmed on the first flash.
+binary_sensor:
+  - platform: gpio
+    id: btn_refresh
+    name: "Refresh Button"
+    pin:
+      number: GPIO5
+      inverted: true
+      allow_other_uses: true
+    on_press:
+      - logger.log: "Button: refresh (GPIO5)"
+      - globals.set:
+          id: stay_awake
+          value: 'true'
+      - script.execute: awake_window
+  - platform: gpio
+    id: btn_left
+    name: "Left Button"
+    pin:
+      number: GPIO4
+      inverted: true
+      allow_other_uses: true
+    on_press:
+      - logger.log: "Button: left (GPIO4)"
+      - script.execute: fetch_image
+  - platform: gpio
+    id: btn_right
+    name: "Right Button"
+    pin:
+      number: GPIO3
+      inverted: true
+      allow_other_uses: true
+      ignore_strapping_warning: true
+    on_press:
+      - logger.log: "Button: right (GPIO3)"
+      - script.execute: fetch_image
+
+# --- Sleep -----------------------------------------------------------------
+deep_sleep:
+  id: deep_sleep_ctrl
+  esp32_ext1_wakeup:
+    pins:
+      - number: GPIO3
+        allow_other_uses: true
+        ignore_strapping_warning: true
+      - number: GPIO4
+        allow_other_uses: true
+      - number: GPIO5
+        allow_other_uses: true
+    mode: ANY_LOW
+
+script:
+  # Decide what this wake is for (see the header comment).
+  - id: handle_wake
+    then:
+      - lambda: |-
+          auto cause = esp_sleep_get_wakeup_cause();
+          if (cause == ESP_SLEEP_WAKEUP_EXT1) {
+            uint64_t pins = esp_sleep_get_ext1_wakeup_status();
+            ESP_LOGI("photoframe", "Woke by button, ext1 mask 0x%llx", (unsigned long long) pins);
+            if (pins & (1ULL << 5)) {
+              id(stay_awake) = true;
+              id(awake_window).execute();
+              return;
+            }
+          } else if (cause == ESP_SLEEP_WAKEUP_TIMER) {
+            ESP_LOGI("photoframe", "Woke by timer");
+          } else {
+            ESP_LOGI("photoframe", "Power-on or reset (cause %d)", (int) cause);
+            id(stay_awake) = true;
+            id(awake_window).execute();
+          }
+          id(fetch_image).execute();
+      # Safety net: never stay up more than 3 min on a non-interactive wake
+      # (no Wi-Fi, server down, hung download).
+      - delay: 3min
+      - if:
+          condition:
+            lambda: 'return !id(stay_awake);'
+          then:
+            - logger.log:
+                level: WARN
+                format: "Wake timed out, going back to sleep"
+            - script.execute: sleep_until_next_slot
+
+  - id: fetch_image
+    mode: single
+    then:
+      - switch.turn_on: battery_divider
+      - delay: 50ms
+      - component.update: battery_voltage
+      - switch.turn_off: battery_divider
+      - wait_until:
+          condition:
+            wifi.connected:
+          timeout: 20s
+      - if:
+          condition:
+            not:
+              wifi.connected:
+          then:
+            - logger.log:
+                level: WARN
+                format: "No Wi-Fi, keeping the current picture"
+            - script.execute: finish_wake
+          else:
+            - component.update: photo
+
+  # Called after the download finished (via the panel refresh) or failed.
+  - id: finish_wake
+    then:
+      - delay: 2s
+      - wait_until:
+          condition:
+            component.is_idle: epaper
+          timeout: 90s
+      - lvgl.pause:
+      - if:
+          condition:
+            lambda: 'return !id(stay_awake);'
+          then:
+            - script.execute: sleep_until_next_slot
+
+  # Refresh button or power-on: stay reachable, then sleep. Restarts on each
+  # refresh press.
+  - id: awake_window
+    mode: restart
+    then:
+      - deep_sleep.prevent: deep_sleep_ctrl
+      - logger.log:
+          format: "Staying awake for ${awake_minutes} min"
+      - delay: ${awake_minutes}min
+      - globals.set:
+          id: stay_awake
+          value: 'false'
+      - deep_sleep.allow: deep_sleep_ctrl
+      - script.execute: sleep_until_next_slot
+
+  # Slots: every 2 h from 06:00 to 20:00 local (same as the old
+  # `0 6-21/2 *` cron). No wakes overnight.
+  - id: sleep_until_next_slot
+    then:
+      - lambda: |-
+          auto now = id(rtc).now();
+          uint32_t sleep_s = 2 * 3600;  // fallback when the clock isn't set
+          if (now.is_valid()) {
+            int now_s = now.hour * 3600 + now.minute * 60 + now.second;
+            int next_s = -1;
+            for (int h = 6; h <= 20; h += 2) {
+              if (h * 3600 > now_s + 60) { next_s = h * 3600; break; }
+            }
+            sleep_s = next_s > 0 ? next_s - now_s : 24 * 3600 - now_s + 6 * 3600;
+          } else {
+            ESP_LOGW("photoframe", "Clock not set, sleeping 2 h");
+          }
+          ESP_LOGI("photoframe", "Sleeping %u s", (unsigned) sleep_s);
+          id(deep_sleep_ctrl).set_sleep_duration(sleep_s * 1000);
+      - deep_sleep.enter: deep_sleep_ctrl
