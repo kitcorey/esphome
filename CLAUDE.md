@@ -12,12 +12,12 @@ ESPHome YAML configs for devices integrated into Home Assistant via native API.
 
 ## Deploying
 
-No ESPHome dashboard or container — devices are managed individually via CLI:
+No ESPHome dashboard or container — devices are managed individually via CLI. Install deps first with `mise install` then `uv sync`, and always invoke esphome through `uv run` so the version pinned in `uv.lock` is used:
 
 ```sh
-esphome run <config>.yaml     # Compile + flash (USB first time, OTA after)
-esphome logs <config>.yaml    # Stream logs over WiFi
-esphome compile <config>.yaml # Compile only (validate config)
+uv run esphome run <config>.yaml     # Compile + flash (USB first time, OTA after)
+uv run esphome logs <config>.yaml    # Stream logs over WiFi
+uv run esphome compile <config>.yaml # Compile only (validate config)
 ```
 
 ## Network

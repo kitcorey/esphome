@@ -19,7 +19,7 @@ ESPHome YAML configs for the devices on my home network, integrated into Home As
 
 ## First-time setup
 
-1. `mise install` — installs Python 3.13, uv, gitleaks, hk, pkl.
+1. `mise install` — installs Python 3.15, uv, gitleaks, hk, pkl.
 2. `mise run install-hooks` — points `core.hooksPath` at `scripts/hooks` so hk runs on commit and push.
 3. `uv sync` — installs `esphome` and the rest of the Python deps.
 4. Drop your real `secrets.yaml` in the repo root (it's gitignored). See `common/wifi.yml` for the keys it expects.
