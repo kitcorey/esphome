@@ -118,6 +118,7 @@ Where the migration stands, written so another session can pick it up.
 - ESPHome 2026.10: `online_image` is `image: - platform: online_image` (the top-level key is removed in 2027.1.0); `request_headers` values are templatable.
 - `epaper_spi` E1004 driver only sends the panel a sleep command; it doesn't cut GPIO12 power. `photoframe.yml` latches GPIO12/16/21/48 low in `on_shutdown` (runs after all `on_safe_shutdown`).
 - OTA with `flash_size: 32MB` requires experimental IDF features, so the config declares 16 MB.
+- ESPHome's T133A01 panel init (from Seeed_GFX `T133A01_Defines.h` after its 2026-03-16 update) differs from esp32-photoframe v2.20.0's (pre-update copy) in three registers: 0x74 (`00 0C 0C D9 DD DD` vs `C0 1C 1C CC CC CC`), BTST_P/N (`E0 20` vs `D8 18`), and DCDC 0xA5 (`44 54 00` vs not sent). An A/B test on 2026-11-10, with the same pre-dithered photo built into the firmware and a temporarily patched `epaper_spi`, showed no visible color difference. Don't chase this again. Neither driver yet has Seeed's 2026-08-26 changes (PLL 0x30 `08`, DRF `00`).
 
 ### Decisions made
 
@@ -134,7 +135,7 @@ Where the migration stands, written so another session can pick it up.
    1. `uvx esptool -p /dev/cu.<port> flash-id` and confirm 32 MB flash.
    2. `uvx esptool -p /dev/cu.<port> read-flash 0 ALL e1004-factory.bin`, check the size, copy it to `~/dev/esp32-photoframe/backups/e1004-factory.bin` on docker1. It contains NVS (Wi-Fi credentials): never commit it or put it in a synced folder.
    3. `uvx esptool -p /dev/cu.<port> write-flash 0x0 firmware.factory.bin` (from `.esphome/build/photoframe/build/`).
-3. ~~**First boot checks**~~ Done 2026-11-10, all passed except the scheduled battery wake (first one due 20:00 that day). Colors may look slightly washed out compared with the old firmware; unconfirmed. Original list: a photo appears; the device joins HA as "Photo Frame" (adopt with the API key); press each button and match the logged GPIO to the physical button (sources disagree: GPIO3/4/5); run one network OTA (`uv run esphome run photoframe.yml --device 192.168.20.59`) during the awake window; confirm it sleeps and wakes on the next slot.
+3. ~~**First boot checks**~~ Done 2026-11-10, all passed except the scheduled battery wake (first one due 20:00 that day). Colors looked slightly washed out at first; that was the room lighting, not the driver (see the next bullet). Original list: a photo appears; the device joins HA as "Photo Frame" (adopt with the API key); press each button and match the logged GPIO to the physical button (sources disagree: GPIO3/4/5); run one network OTA (`uv run esphome run photoframe.yml --device 192.168.20.59`) during the awake window; confirm it sleeps and wakes on the next slot.
 4. **After cutover:** regenerate the device token in the server UI (the current one was printed in a session transcript) and update `photoframe_server_auth`; watch the battery sensor for a week; optionally remove the frame's old "device config" in the server (its pushes to the frame API will fail harmlessly).
 
 ### Rollback
