@@ -15,8 +15,8 @@
 #                  new image; left/right still fetch while awake
 #   power-on/reset fetch a new image and stay awake (e.g. after flashing)
 #
-# Unverified on hardware until the first USB flash: flash size, button GPIOs
-# (Seeed and the ESPHome sample config disagree), PSRAM mode.
+# Verified on hardware (first flash 2026-11-10): 32 MB Winbond flash, 8 MB
+# octal PSRAM, buttons left=GPIO4, right=GPIO3, refresh=GPIO5.
 
 substitutions:
   name: 'photoframe'
@@ -33,6 +33,9 @@ esp32:
   # first flash), but ESPHome only supports OTA on 32 MB with experimental
   # IDF features enabled. 16 MB is safe on a 32 MB chip and plenty here.
   flash_size: 16MB
+  # Decoding the 1200x1600 PNG, LVGL rendering and the panel transfer can
+  # each block the loop well past the 5 s default (see esphome#18797).
+  watchdog_timeout: 60s
   framework:
     type: esp-idf
 

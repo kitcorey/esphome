@@ -1,11 +1,10 @@
 # Move the E1004 to ESPHome with server-side dithering
 
-> **Status (2026-11-09):** Stage 1 is done, using the upstream `esp32-photoframe-server`
-> (`~/docker/photoframe-server`) instead of a hand-built `process-cli` wrapper. The frame still runs
-> esp32-photoframe v2.20.0 in URL rotation mode and pulls from
-> `http://photoframe-server.lan.kitcorey.com:9607/image`. Stage 2 config (`photoframe.yml`) is
-> written and compiles; it has not been flashed. See [Handoff](#handoff-2026-11-09) at the end. The
-> research below that is the original November 2026 snapshot.
+> **Status (2026-11-10):** The frame runs ESPHome (`photoframe.yml`), flashed over USB on
+> 2026-11-10, adopted in HA, and network OTA verified. It pulls from the upstream
+> `esp32-photoframe-server` (`~/docker/photoframe-server`) at
+> `http://photoframe-server.lan.kitcorey.com:9607/image`. See [Handoff](#handoff-2026-11-09) at
+> the end. The research below that is the original November 2026 snapshot.
 
 **Choose ESPHome**, and move the image processing you already like into a small Docker service on the home server that uses the same MIT-licensed `@aitjcize/epaper-image-convert` engine as esp32-photoframe. The frame then only has to wake, download a 1200x1600 PNG that is already dithered to the six inks, paint it, and go back to sleep. Updates become ordinary `esphome run` OTA pushes from your CLI over the LAN, with no GitHub release feed and no USB. This setup meets every requirement you listed. ESPHome has had a dedicated E1004 (T133A01) driver since **2026.7.0**. An ESPHome maintainer has published a working E1004 photo-frame config that uses exactly this "dithered PNG from a server, then deep sleep" pattern. And esp32-photoframe's own `process-cli --serve` already writes pure-RGB six-colour PNGs that ESPHome's colour mapper reproduces pixel-for-pixel. Second place goes to a **patched fork of esp32-photoframe** (configurable or LAN-upload OTA, plus fixes for the button and for rotation while the web UI is open). It keeps today's on-device features and SD-card independence, but you would be carrying a fork of a project that releases monthly. **Tesserae** comes third: it is technically impressive, but its OTA only accepts images signed with that project's key, which is the kind of project lock-in you want to avoid. TRMNL (monochrome on this panel), SenseCraft HMI (cloud-only) and a from-scratch Arduino build drop out. Every option needs one USB session to leave the current firmware, because its OTA cannot be redirected. Take the factory flash backup during that session. After that, routine updates are network-only.
 
@@ -105,11 +104,11 @@ Where the migration stands, written so another session can pick it up.
 
 | Piece | State |
 |---|---|
-| Frame | Still esp32-photoframe v2.20.0, URL rotation mode, cron `0 6-21/2 *`, deep sleep on. Pulls from the server; first fetch verified. |
+| Frame | ESPHome 2026.10.1 since 2026-11-10 (was esp32-photoframe v2.20.0). Hardware: 32 MB Winbond flash, 8 MB octal PSRAM, MAC `b8:1f:3f:d7:4f:9c`, CH340 USB-serial (`/dev/ttyUSB0` on Linux, no BOOT press needed). Buttons confirmed: left GPIO4, right GPIO3, refresh GPIO5. Per wake: ~2-4 s server render, ~15 s download+decode, ~3.4 s LVGL render, ~32 s panel refresh. |
 | Server | `~/docker/photoframe-server` (committed), `aitjcize/esp32-photoframe-server:v1.18.0`. UI https://photoframe-server.lan.kitcorey.com, device id 1. Frame-facing URL `http://photoframe-server.lan.kitcorey.com:9607/image` (plain HTTP on purpose: the old firmware can't validate step-ca). |
 | Network | Frame 192.168.20.59 (DHCP reservation, outside pool; DNS `photoframe.lan.kitcorey.com`). pfSense NoT rule: `photoframe` -> `docker1` tcp/9607. NoT may also reach HA, pfSense DNS and NTP. No internet. |
-| ESPHome | `photoframe.yml` + this doc are new and **uncommitted**. Compiles on 2026.10.1 (flash 1.14 MB, RAM 34%). Secret `photoframe_server_auth` ("Bearer <device token>") added to the gitignored `secrets.yaml`. |
-| Backups | `~/dev/esp32-photoframe/backups/frame-settings-2026-11-09/` (config, processing, palette). Thumbnails of the 12 SD photos: `/mnt/tank/users/kit/frame-thumbnails-2026-11-09/`. **No factory flash backup yet.** |
+| ESPHome | `photoframe.yml` flashed and committed. Adopted in HA by IP (mDNS doesn't cross VLANs). HA -> frame:6053 works. DNS is now the router (192.168.20.1) fleet-wide. `watchdog_timeout: 60s` added: the LVGL render blocks the loop ~3.4 s per image, close to the 5 s default. Secret `photoframe_server_auth` ("Bearer <device token>") in the gitignored root `secrets.yaml`. |
+| Backups | Factory flash: `~/dev/esp32-photoframe/backups/e1004-factory.bin` on april-laptop and docker1, 33554432 bytes, sha256 `1d1954f2543919874e811e0cc3144635acb0f00b4ae2fac8d0e1c559c49224f2`. Settings: `~/dev/esp32-photoframe/backups/frame-settings-2026-11-09/` (config, processing, palette). Thumbnails of the 12 SD photos: `/mnt/tank/users/kit/frame-thumbnails-2026-11-09/`. |
 
 ### Verified facts the config relies on
 
@@ -131,11 +130,11 @@ Where the migration stands, written so another session can pick it up.
 ### Next steps
 
 1. **Fleet update support for sleeping devices** (proposed, *not yet approved by the user*; don't implement without asking). Add an optional `wake: "<hint>"` field to `fleet/availability.yml` (`photoframe: wake: "Press Refresh on the frame"`). In `fleet_update.py`, a `wake:` device that doesn't answer ping is planned as "flash (needs wake)" instead of "unreachable", is flashed last (after critical devices), and the script prints the hint and waits up to ~5 min for a ping before flashing. Non-interactive: the skill asks the user to press Refresh, then runs with something like `--wait-for-wake photoframe.yml`. The existing wait-for-HA-version step works unchanged within the 10-min awake window. Touches `fleet_update.py`, the availability classifier and `SKILL.md`.
-2. **USB session** (the user's machines are Macs; the frame's USB goes through a USB-serial bridge that has needed a driver on macOS; on Linux it's `/dev/ttyACM0`). Hold BOOT while plugging in if it won't connect. On the Mac: `brew install uv`, then:
+2. ~~**USB session**~~ Done 2026-11-10 from april-laptop (Linux). Original plan kept for reference: (the user's machines are Macs; the frame's USB goes through a USB-serial bridge that has needed a driver on macOS; on Linux it's `/dev/ttyACM0`). Hold BOOT while plugging in if it won't connect. On the Mac: `brew install uv`, then:
    1. `uvx esptool -p /dev/cu.<port> flash-id` and confirm 32 MB flash.
    2. `uvx esptool -p /dev/cu.<port> read-flash 0 ALL e1004-factory.bin`, check the size, copy it to `~/dev/esp32-photoframe/backups/e1004-factory.bin` on docker1. It contains NVS (Wi-Fi credentials): never commit it or put it in a synced folder.
    3. `uvx esptool -p /dev/cu.<port> write-flash 0x0 firmware.factory.bin` (from `.esphome/build/photoframe/build/`).
-3. **First boot checks:** a photo appears; the device joins HA as "Photo Frame" (adopt with the API key); press each button and match the logged GPIO to the physical button (sources disagree: GPIO3/4/5); run one network OTA (`uv run esphome run photoframe.yml --device 192.168.20.59`) during the awake window; confirm it sleeps and wakes on the next slot.
+3. ~~**First boot checks**~~ Done 2026-11-10, all passed except the scheduled battery wake (first one due 20:00 that day). Colors may look slightly washed out compared with the old firmware; unconfirmed. Original list: a photo appears; the device joins HA as "Photo Frame" (adopt with the API key); press each button and match the logged GPIO to the physical button (sources disagree: GPIO3/4/5); run one network OTA (`uv run esphome run photoframe.yml --device 192.168.20.59`) during the awake window; confirm it sleeps and wakes on the next slot.
 4. **After cutover:** regenerate the device token in the server UI (the current one was printed in a session transcript) and update `photoframe_server_auth`; watch the battery sensor for a week; optionally remove the frame's old "device config" in the server (its pushes to the frame API will fail harmlessly).
 
 ### Rollback
